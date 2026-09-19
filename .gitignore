@@ -1,0 +1,13 @@
+*.o
+*.ko
+*.mod
+*.mod.c
+*.cmd
+.*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+*.symvers
+qemu/initramfs.cpio.gz
+compile_commands.json
+*.swp
