@@ -7,7 +7,7 @@ set -euo pipefail
 
 ref="${1:?用法: newver.sh <tag或分支> [目录后缀]}"
 suffix="${2:-${ref#v}}"
-KSRC_ROOT="${KSRC_ROOT:-$HOME/src}"
+KSRC_ROOT="${KSRC_ROOT:-/home/chen/code/linux-lab/src}"
 HUB="$KSRC_ROOT/linux"
 dest="$KSRC_ROOT/linux-$suffix"
 

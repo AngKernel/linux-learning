@@ -7,7 +7,7 @@ set -euo pipefail
 ver="${1:?用法: kbuild.sh <版本，如 6.18> [reconfig]}"
 mode="${2:-}"
 LEARN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-KSRC_ROOT="${KSRC_ROOT:-$HOME/src}"
+KSRC_ROOT="${KSRC_ROOT:-/home/chen/code/linux-lab/src}"
 KDIR="$KSRC_ROOT/linux-$ver"
 
 [ -d "$KDIR" ] || { echo "没有 $KDIR，先 ./scripts/newver.sh v$ver"; exit 1; }

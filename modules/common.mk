@@ -1,5 +1,5 @@
 # 被各模块 Makefile 在"独立调用"模式下 include（kbuild 二次解析时不会走到这里）
-KSRC_ROOT ?= $(HOME)/src
+KSRC_ROOT ?= /home/chen/code/linux-lab/src
 KVER      ?= 6.18
 KDIR      ?= $(KSRC_ROOT)/linux-$(KVER)
 MOD_DIR   := $(CURDIR)

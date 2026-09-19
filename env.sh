@@ -3,7 +3,7 @@
 
 _le_self="${BASH_SOURCE[0]:-$0}"
 export LEARN_ROOT="$(cd "$(dirname "$_le_self")" && pwd)"
-export KSRC_ROOT="${KSRC_ROOT:-$HOME/src}"
+export KSRC_ROOT="${KSRC_ROOT:-/home/chen/code/linux-lab/src}"
 export KVER="${1:-${KVER:-6.18}}"
 export KDIR="$KSRC_ROOT/linux-$KVER"
 

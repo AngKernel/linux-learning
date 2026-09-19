@@ -9,7 +9,7 @@ set -euo pipefail
 ver="${1:?用法: run-qemu.sh <版本> [--gdb]}"
 shift || true
 LEARN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-KSRC_ROOT="${KSRC_ROOT:-$HOME/src}"
+KSRC_ROOT="${KSRC_ROOT:-/home/chen/code/linux-lab/src}"
 KDIR="$KSRC_ROOT/linux-$ver"
 bz="$KDIR/arch/x86/boot/bzImage"
 initrd="$LEARN_ROOT/qemu/initramfs.cpio.gz"

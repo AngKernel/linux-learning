@@ -1,5 +1,5 @@
 # 顶层：把命令转发给 modules/ 下每个模块
-KSRC_ROOT ?= $(HOME)/src
+KSRC_ROOT ?= /home/chen/code/linux-lab/src
 KVER      ?= 6.18
 export KSRC_ROOT KVER
 
