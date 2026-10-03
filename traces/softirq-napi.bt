@@ -3,7 +3,7 @@
  * 运行：sudo /work/traces/run.sh softirq-napi 20
  * 预期：@softirq_calls[CPU, vec]；@poll_work[CPU, dev, napi指针]；@at_budget[...]。
  * vec=2 为 NET_TX，vec=3 为 NET_RX。work 是驱动报告的工作量，TX poll 可为 0。
- * 源码：include/trace/events/irq.h:102；include/trace/events/napi.h:14。
+ * 源码：include/trace/events/irq.h:103；include/trace/events/napi.h:14。
  */
 BEGIN { printf("READY softirq-napi\n"); }
 tracepoint:irq:softirq_entry {

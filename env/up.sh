@@ -24,9 +24,10 @@ if [[ $mode == quick ]]; then
  # --qemu-opts 必须最后；关闭 microvm 以使用 PCI virtio 网卡。
  cmd=(virtme-run --kdir "$BUILD_DIR" --mods=none --force-9p --disable-microvm
   --memory "${MEMORY:-4096M}" --cpus "${CPUS:-2}" --user root --empty-passwords
+  --overlay-rwdir /usr/local/bin
   --rwdir "/work=$REPO" --rodir "/kernel-build=$BUILD_DIR" --rodir "/run/ll-host=$LL_STATE/keys/public"
   --kopt nokaslr --kopt net.ifnames=0
-  --script-sh "/work/env/guest-quick.sh $VM_ID")
+  --script-sh "/work/env/guest-quick.sh $VM_ID $(uname -r)")
  [[ $accel != tcg ]] || cmd+=(--disable-kvm)
  cmd+=(--qemu-opts "${qargs[@]}")
 else
