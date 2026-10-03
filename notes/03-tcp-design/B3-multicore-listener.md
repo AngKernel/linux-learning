@@ -19,7 +19,7 @@
 | RFS（接收流导向） | 倾向应用消费数据所在 CPU，并考虑旧队列进度以免乱序 | `Documentation/networking/scaling.rst:311` |
 | XPS（发送包导向） | TX 队列，可用 CPU 或 RX 队列映射 | `Documentation/networking/scaling.rst:461` |
 
-`SO_REUSEPORT` 让多个 listener 分享地址端口并选择其中一个，降低共享 accept 入口竞争；它不自动保证应用绑定正确 CPU，也不把一个既有连接的数据任意散给所有 listener。
+`SO_REUSEPORT` 让多个 listener 分享地址端口并选择其中一个，降低共享 accept 入口竞争，选择入口见 `net/ipv4/inet_hashtables.c:387`；它不自动保证应用绑定正确 CPU，也不把一个既有连接的数据任意散给所有 listener。
 
 listener 可扩展性还有另一条线：把握手的 `request_sock` 放进 ehash，握手 ACK 可直接找到它。6.18 的 `reqsk_queue_hash_req()` 调用 `inet_ehash_insert()`，见 `net/ipv4/inet_connection_sock.c:1170`。`tcp_v4_rcv()` 对 LISTEN 直接走 `tcp_v4_do_rcv()`，绕过下面的普通 socket 锁（`net/ipv4/tcp_ipv4.c:2363`）。
 

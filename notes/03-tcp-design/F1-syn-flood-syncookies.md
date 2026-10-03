@@ -14,7 +14,7 @@
 
 ## 3. 方案：编码必要信息，收到有效 ACK 再重建
 
-正常路径使用 `request_sock`，B3 已说明它在 ehash 中可被后续包直接找到。`tcp_conn_request()` 判断队列压力和 cookie 配置，见 `net/ipv4/tcp_input.c:7385`。配置 `tcp_syncookies=1` 用作溢出退路，2 为无条件测试模式；编译条件是 `CONFIG_SYN_COOKIES`，见 `Documentation/networking/ip-sysctl.rst:922`。
+正常路径使用 `request_sock`，B3 已说明它在 ehash 中可被后续包直接找到。`tcp_conn_request()` 判断队列压力和 cookie 配置，见 `net/ipv4/tcp_input.c:7380`。配置 `tcp_syncookies=1` 用作溢出退路，2 为无条件测试模式；编译条件是 `CONFIG_SYN_COOKIES`，见 `Documentation/networking/ip-sysctl.rst:922`。
 
 cookie 路径将可验证信息编码进 SYN-ACK 序列号：地址端口、客户端序列号、时间相关计数、密钥 hash 和有限的 MSS 信息，见 `secure_tcp_syn_cookie()`，`net/ipv4/syncookies.c:85`。收到 ACK 后验证 cookie 和时效，恢复必要状态再创建连接；普通 IPv4 检查见 `cookie_tcp_check()` / `cookie_v4_check()`，`net/ipv4/syncookies.c:358`、第 400 行。
 

@@ -18,7 +18,7 @@
 
 后续报文经 `tcp_timewait_state_process()` 检查并回应（`net/ipv4/tcp_minisocks.c:101`）。真正 TIME_WAIT 使用 `TCP_TIMEWAIT_LEN`，6.18 为 `60*HZ`（`include/net/tcp.h:141`）；这不等于所有 FIN_WAIT2 情况都固定 60 秒。每个 tw 的普通 timer 到期触发回收，见 `net/ipv4/inet_timewait_sock.c:172`。
 
-分配失败会记溢出并直接结束原连接（`net/ipv4/tcp_minisocks.c:386`）：通用栈在资源耗尽时也必须做有损退让，不能承诺无限保留所有协议记忆。
+分配失败会记溢出并直接结束原连接（`net/ipv4/tcp_minisocks.c:387`）：通用栈在资源耗尽时也必须做有损退让，不能承诺无限保留所有协议记忆。
 
 ## 4. 演进
 

@@ -23,7 +23,7 @@
 
 接收 `tcp_mmap()` 位于 `net/ipv4/tcp.c:1839`，实际消费在 `tcp_zerocopy_receive()`（`net/ipv4/tcp.c:2169`）。`can_map_frag()` 检查完整页等条件并排除 compound/mapping 页（`net/ipv4/tcp.c:1879`）。`recv_skip_hint` 表示仍要通过复制消费的字节，不能跳过 TCP 字节流；`copybuf_address/copybuf_len` 可让小读直接走复制。
 
-devmem 接收实现为 `tcp_recvmsg_dmabuf()`（`net/ipv4/tcp.c:2477`）。`MSG_SOCK_DEVMEM` 表明应用理解其语义；控制消息携带 offset、size、token，再用 `SO_DEVMEM_DONTNEED` 归还（`Documentation/networking/devmem.rst:145`）。要求见该文档第 79 行；第 382 行说明 loopback、软件 checksum、抓取 payload 等限制。因此不能拿普通 veth 环境宣称已验证 devmem。
+devmem 接收实现为 `tcp_recvmsg_dmabuf()`（`net/ipv4/tcp.c:2477`）。`MSG_SOCK_DEVMEM` 表明应用理解其语义；控制消息携带 offset、size、token，再用 `SO_DEVMEM_DONTNEED` 归还（`Documentation/networking/devmem.rst:146`）。要求见该文档第 79 行；第 382 行说明 loopback、软件 checksum、抓取 payload 等限制。因此不能拿普通 veth 环境宣称已验证 devmem。
 
 ## 4. 演进
 
@@ -46,7 +46,7 @@ lwIP 2.2.0 的 `tcp_write()` 不设 `TCP_WRITE_FLAG_COPY` 时可引用应用数�
 
 ## 7. 验证
 
-使用源码自带发送 ZC、接收 mmap 和硬件 devmem selftest，先阅读各自条件；按相同数据完整性、消息大小、CPU 和链路比较复制/ZC。至少同时记录 cycles/byte、吞吐、尾延迟和缓冲占用。此处未编译或运行这些测试；宿主 6.8 不能代表目标 6.18。
+使用源码自带 `tools/testing/selftests/net/msg_zerocopy.c`、`tools/testing/selftests/net/tcp_mmap.c` 和 `tools/testing/selftests/drivers/net/hw/ncdevmem.c`，先阅读各自条件；按相同数据完整性、消息大小、CPU 和链路比较复制/ZC。至少同时记录 cycles/byte、吞吐、尾延迟和缓冲占用。此处未编译或运行这些测试；宿主 6.8 不能代表目标 6.18。
 
 ## 要点回顾
 

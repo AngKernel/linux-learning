@@ -16,7 +16,7 @@
 
 CUBIC 注册 `cong_avoid` 等回调（`net/ipv4/tcp_cubic.c:478`）；BBR 用 `cong_control`（`net/ipv4/tcp_bbr.c:1143`），可依据 delivery-rate 样本更新 rate/cwnd。`tcp_cong_control()` 在两种接口间分流，见 `net/ipv4/tcp_input.c:3638`。BBR 的模型动机和窗口/速率公式直接写在 `net/ipv4/tcp_bbr.c:1`，不能从“模块名 bbr”猜成其他版本的 BBR 算法。
 
-BPF struct_ops（由 BPF 提供结构体函数操作）让程序实现这张表并通过相同注册路径接入。`net/ipv4/bpf_tcp_ca.c:60` 列出可写字段及边界，例如 pacing rate、cwnd 与私有区；不是把任意内核指针开放给程序。第 240 行最终调用 `tcp_register_congestion_control()`。验证器和类型约束保护执行边界，不证明算法的网络公平性、收敛或业务收益。
+BPF struct_ops（由 BPF 提供结构体函数操作）让程序实现这张表并通过相同注册路径接入。`net/ipv4/bpf_tcp_ca.c:61` 列出可写字段及边界，例如 pacing rate、cwnd 与私有区；不是把任意内核指针开放给程序。第 240 行最终调用 `tcp_register_congestion_control()`。验证器和类型约束保护执行边界，不证明算法的网络公平性、收敛或业务收益。
 
 ## 4. 演进
 
