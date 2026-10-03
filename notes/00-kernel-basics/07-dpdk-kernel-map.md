@@ -10,11 +10,11 @@
 
 | DPDK 概念 → 内核概念 | 相同点 | 不同点 | 为什么不同 | v6.18 网络代码锚点 |
 |---|---|---|---|---|
-| rte_mbuf → sk_buff | 都描述包数据、长度、元信息与持有关系 | skb 元数据、线性数据与分片可以分离，共享数据和元数据有不同引用 | 内核协议层需要 clone、排队、重组及多种来源的数据存储 | `refcount_set(&skb->users, 1)`，`net/core/skbuff.c:372`；元数据/数据分配 `:661`、`:670` |
+| rte_mbuf → sk_buff | 都描述包数据、长度、元信息与持有关系 | skb 元数据、线性数据与分片可以分离，共享数据和元数据有不同引用 | 内核协议层需要 clone、排队、重组及多种来源的数据存储 | `refcount_set(&skb->users, 1)`，`net/core/skbuff.c:372`；元数据/数据分配 `net/core/skbuff.c:660`、`net/core/skbuff.c:670` |
 | PMD → 内核网卡驱动 | 都管理设备、描述符和 DMA 收发 | 内核驱动接入 net_device、IRQ、NAPI 和系统生命周期；PMD 常由应用轮询 | 内核服务多个进程且与调度、设备管理共享机器资源 | `.ndo_start_xmit = e1000_xmit_frame`，`drivers/net/ethernet/intel/e1000/e1000_main.c:824` |
 | rx_burst 轮询 → NAPI poll | 都批量收包以摊薄开销 | NAPI 的 poll 受 budget、完成与重调度协议约束，也可回收 TX；返回语义不是 mbuf 数组接口 | 需要在吞吐与其他内核工作之间安排执行机会 | `netif_napi_add(netdev, &adapter->napi, e1000_clean)`，`drivers/net/ethernet/intel/e1000/e1000_main.c:1009` |
-| lcore → 执行网络工作的 CPU | 都关注亲和性、NUMA 和本地数据 | softirq 是执行上下文，不是一个由应用独占的常驻 lcore；threaded NAPI 另有线程 | CPU 还要处理系统调用、中断与调度任务 | `this_cpu_ptr(&softnet_data)`，`net/core/dev.c:7747`；线程创建 `:1636` |
-| rte_ring → 内核中的队列 | 都用于保存待处理对象或跨执行流交接 | 内核可能使用链表、skb 队列、描述符环、树；生产者数与锁协议各异 | 队列承担的排序、丢弃、唤醒和内存记账职责不同 | `__skb_queue_tail(list, skb)`，`net/core/sock.c:515`；这里由外层持 IRQ 保存锁 |
+| lcore → 执行网络工作的 CPU | 都关注亲和性、NUMA 和本地数据 | softirq 是执行上下文，不是一个由应用独占的常驻 lcore；threaded NAPI 另有线程 | CPU 还要处理系统调用、中断与调度任务 | `this_cpu_ptr(&softnet_data)`，`net/core/dev.c:7747`；线程创建 `net/core/dev.c:1636` |
+| rte_ring → 内核中的队列 | 都用于保存待处理对象或跨执行流交接 | 内核可能使用链表、skb 队列、描述符环、树；生产者数与锁协议各异 | 队列承担的排序、丢弃、唤醒和内存记账职责不同 | `__skb_queue_tail(list, skb)`，`net/core/sock.c:514`；这里由外层持 IRQ 保存锁 |
 | mempool → slab / page_pool | 都通过复用减少分配成本 | slab 偏小对象，page_pool 偏接收数据页与 DMA 回收；内核还受 GFP 与全局回收约束 | 不同上下文允许的阻塞行为、内存压力和对象生命周期不同 | `rx_q->page_pool = page_pool_create(&pp_params)`，`drivers/net/ethernet/stmicro/stmmac/stmmac_main.c:2064` |
 | RSS → RSS + IRQ/软件处理映射 | 同类网卡都能按流 hash 选择 RX queue | RSS 队列选择不等于最终协议栈 CPU；IRQ 亲和性、RPS 等还影响后续执行 | 硬件分流与软件 CPU 调度是不同层的问题 | `IXGBE_WRITE_REG(hw, IXGBE_RETA(i >> 2), reta)`，`drivers/net/ethernet/intel/ixgbe/ixgbe_main.c:4273`；RPS backlog `net/core/dev.c:5261` |
 | EAL 初始化 → 内核初始化 + bus/driver probe | 都准备运行环境和设备资源 | probe 是设备匹配后的生命周期回调，不是整个内核的 EAL；内存/调度早已存在 | 内核是长期运行的全系统资源管理者，支持模块与设备变化 | `.probe = e1000_probe`，`drivers/net/ethernet/intel/e1000/e1000_main.c:183` |

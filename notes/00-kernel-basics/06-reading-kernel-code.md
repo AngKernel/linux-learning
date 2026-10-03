@@ -52,7 +52,7 @@ sudo bpftrace -e 'kprobe:inet_recvmsg { @[comm] = count(); } interval:s:5 { exit
 
 clangd（C/C++ 语言服务）要知道当前配置下的 include 路径、宏和真实编译命令。仅用源码搜索可以找到文本；错误编译参数下的编辑器跳转却可能落到不适用的配置分支。
 
-内核自带 `scripts/clang-tools/gen_compile_commands.py`，从已有构建的 `.cmd` 文件提取编译数据库，说明与参数见同文件 `:38`、`:44`、`:49`。**先有匹配 v6.18 配置的构建产物，才有有用的数据库。** 本篇不启动构建；实验环境篇负责准备构建目录。
+内核自带 `scripts/clang-tools/gen_compile_commands.py`，从已有构建的 `.cmd` 文件提取编译数据库，说明与参数见同文件 `net/ipv4/af_inet.c:38`、`net/ipv4/af_inet.c:44`、`net/ipv4/af_inet.c:49`。**先有匹配 v6.18 配置的构建产物，才有有用的数据库。** 本篇不启动构建；实验环境篇负责准备构建目录。
 
 ```sh
 KERNEL_SRC=/home/chen/code/linux-lab/src/linux-6.18

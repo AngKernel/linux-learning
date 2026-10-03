@@ -27,7 +27,7 @@ spin_lock_bh(&sk->sk_lock.slock);
 
 出处：`net/core/sock.c:3154`。这几行足以反证“可以拿着该自旋锁睡眠”。不要把整个 socket 锁机制等同于单纯 spinlock；上层还维护 socket 所有权和 backlog。
 
-接收 backlog 的锁根据 RPS 或 backlog thread 设置选择 IRQ 保存与自旋锁组合，见 `net/core/dev.c:230`。接口别名更新则使用 mutex，见 `net/core/dev.c:1528`。先找到所有访问者，才知道每个后缀的必要性。
+接收 backlog 的锁根据 RPS 或 backlog thread 设置选择 IRQ 保存与自旋锁组合，见 `net/core/dev.c:231`。接口别名更新则使用 mutex，见 `net/core/dev.c:1528`。先找到所有访问者，才知道每个后缀的必要性。
 
 ## atomic 与 per-CPU 分别缩小了什么问题
 
@@ -96,7 +96,7 @@ grace period（宽限期）让先前可能持有旧指针的读侧临界区结�
 
 memory barrier（内存屏障）约束观察次序；mutex/spinlock/RCU 的发布读取 API 已承担各自协议所需的一部分次序保证。上面的新对象必须先初始化，再让读者看见它；仅仅把指针声明为 `volatile` 不构成这个协议。
 
-`READ_ONCE`/`WRITE_ONCE` 不是跨字段事务，也不是万能内存屏障。内核说明见 `Documentation/memory-barriers.txt:231`、`:479`。网络中的真实发布和读取例子就是上述 `rcu_replace_pointer` 与 `rcu_dereference`。第一遍读代码先保持原有配对，不自行删屏障“优化”。
+`READ_ONCE`/`WRITE_ONCE` 不是跨字段事务，也不是万能内存屏障。内核说明见 `Documentation/memory-barriers.txt:231`、`Documentation/memory-barriers.txt:479`。网络中的真实发布和读取例子就是上述 `rcu_replace_pointer` 与 `rcu_dereference`。第一遍读代码先保持原有配对，不自行删屏障“优化”。
 
 ## 动手：画访问者表
 

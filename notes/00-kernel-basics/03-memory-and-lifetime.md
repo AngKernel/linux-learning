@@ -20,7 +20,7 @@ skb = kmem_cache_alloc_node(cache, gfp_mask & ~GFP_DMA, node);
 data = kmalloc_reserve(&size, gfp_mask, node, &pfmemalloc);
 ```
 
-出处：`net/core/skbuff.c:661`、`net/core/skbuff.c:670`。同函数也有 NAPI 对象缓存优化路径，见 `net/core/skbuff.c:657`。这段展示“元数据对象”和“包数据存储”是两次不同的资源获取，不能套用一个连续的 mbuf 布局模型。
+出处：`net/core/skbuff.c:660`、`net/core/skbuff.c:670`。同函数也有 NAPI 对象缓存优化路径，见 `net/core/skbuff.c:656`。这段展示“元数据对象”和“包数据存储”是两次不同的资源获取，不能套用一个连续的 mbuf 布局模型。
 
 ## GFP 不是性能等级，而是允许分配器做什么
 
@@ -54,7 +54,7 @@ skb 元数据与共享包数据还有不同的引用关系；共享信息里的 
 kref_put(&rd->rd_kref, rpcrdma_rn_release);
 ```
 
-出处：`net/sunrpc/xprtrdma/ib_client.c:97`；初始化和增加引用见同文件 `:115`、`:67`。其 release 回调只是通知完成，见 `:73`，并非所有 release 回调都直接 kfree。最后一次引用退出时“做什么”，必须读取回调本身。
+出处：`net/sunrpc/xprtrdma/ib_client.c:97`；初始化和增加引用见同文件 `net/sunrpc/xprtrdma/ib_client.c:115`、`net/sunrpc/xprtrdma/ib_client.c:67`。其 release 回调只是通知完成，见 `net/sunrpc/xprtrdma/ib_client.c:73`，并非所有 release 回调都直接 kfree。最后一次引用退出时“做什么”，必须读取回调本身。
 
 引用计数非零也不能保证两个 CPU 同时修改字段是安全的；对象寿命与字段一致性需要分别分析。反过来，拿到一个已失效的裸指针后再增引用，也救不了 use-after-free。
 

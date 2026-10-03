@@ -10,9 +10,9 @@
 
 | 结构 | 先看什么 | 网络代码实例 | 适用理解 |
 |---|---|---|---|
-| list_head | 头节点、嵌入成员、遍历宏 | `net/ipv4/tcp_cong.c:21`、`:28` | 双向循环链表；这里维护拥塞控制算法集合 |
-| hlist | hash 选桶，再沿桶内链查找 | `net/core/dev.c:310`、`:314` | 桶头比普通双向链表头更小；它自身不是 hash 函数 |
-| rbtree | 比较键、插入位置、平衡操作 | `net/ipv4/tcp_input.c:5132`、`:5168` | 红黑树；这里管理 TCP 乱序段 |
+| list_head | 头节点、嵌入成员、遍历宏 | `net/ipv4/tcp_cong.c:22`、`net/ipv4/tcp_cong.c:29` | 双向循环链表；这里维护拥塞控制算法集合 |
+| hlist | hash 选桶，再沿桶内链查找 | `net/core/dev.c:308`、`net/core/dev.c:314` | 桶头比普通双向链表头更小；它自身不是 hash 函数 |
+| rbtree | 比较键、插入位置、平衡操作 | `net/ipv4/tcp_input.c:5132`、`net/ipv4/tcp_input.c:5168` | 红黑树；这里管理 TCP 乱序段 |
 
 链表例子：
 
@@ -23,7 +23,7 @@ list_for_each_entry_rcu(e, &tcp_cong_list, list) {
 }
 ```
 
-出处：`net/ipv4/tcp_cong.c:28`。`list` 是对象内嵌节点的成员名；宏恢复业务对象给 e。后缀 `_rcu` 提示还要检查调用者的读侧保护，它不会自动为所有调用者建立读侧临界区。
+出处：`net/ipv4/tcp_cong.c:29`。`list` 是对象内嵌节点的成员名；宏恢复业务对象给 e。后缀 `_rcu` 提示还要检查调用者的读侧保护，它不会自动为所有调用者建立读侧临界区。
 
 hlist 例子先由 `dev_name_hash` 选桶，再比较字符串，见 `net/core/dev.c:311`。rbtree 则先找位置，再挂节点并调整颜色：
 
@@ -51,7 +51,7 @@ ops（操作表）是一组函数指针，常见于设备、文件和协议层�
 .recvmsg = inet_recvmsg,
 ```
 
-出处：`net/ipv4/af_inet.c:1071`。socket 创建时从匹配的协议类型项取得 ops，见同文件 `:320`；上层在 `net/socket.c:1078` 读取 `sock->ops->recvmsg` 分派。
+出处：`net/ipv4/af_inet.c:1071`。socket 创建时从匹配的协议类型项取得 ops，见同文件 `net/ipv4/af_inet.c:320`；上层在 `net/socket.c:1078` 读取 `sock->ops->recvmsg` 分派。
 
 类似 C++ 虚函数的地方是“同一个调用点可以选择不同实现”。不成立的地方是：C 不自动提供继承、构造/析构或寿命保障，布局、注册、引用与同步全部显式编写。也要区别 `proto_ops` 与更下层的其他操作表，不见到 recvmsg 就把所有表混为一个。
 
@@ -75,8 +75,8 @@ return NULL;
 
 | 写法 | 它表达什么 | 网络代码例子 | 不能据此推断什么 |
 |---|---|---|---|
-| likely / unlikely | 分支倾向提示，某些配置也支持分析 | `net/core/skbuff.c:662` | 不改变真假语义，不保证 CPU 永远预测正确 |
-| __rcu | 给类型检查/分析工具的 RCU 指针注解 | 对应 `net/core/dev.c:1554` 的 RCU 读取；字段定义 `include/linux/netdevice.h:2141` 给出另一实例 | 注解自身不会加锁或延迟释放 |
+| likely / unlikely | 分支倾向提示，某些配置也支持分析 | `net/core/skbuff.c:661` | 不改变真假语义，不保证 CPU 永远预测正确 |
+| __rcu | 给类型检查/分析工具的 RCU 指针注解 | 对应 `net/core/dev.c:1554` 的 RCU 读取；字段定义 `include/linux/netdevice.h:2166` | 注解自身不会加锁或延迟释放 |
 | __user | 提示用户地址空间指针 | `net/socket.c:2269` | 不能因此直接在内核解引用用户地址 |
 | EXPORT_SYMBOL | 允许其他模块解析该内核符号 | `net/core/skbuff.c:703` | 不是导出给用户态的 libc 函数，也不保证稳定模块 ABI |
 

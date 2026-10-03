@@ -11,13 +11,13 @@
 | 上下文 | 可睡眠/等待 mutex | 调度抢占 | 硬中断可打断 | 分配内存的入门规则 | 网络例子 |
 |---|---|---|---|---|---|
 | 系统调用中的进程上下文 | 可，前提是不在原子临界区 | 取决于抢占配置及临界区 | 通常可 | 可睡眠处用 GFP_KERNEL | `net/socket.c:2269` |
-| 硬中断处理程序 | 不可 | 不可 | 常规入口本地 IRQ 关闭；NMI 另论 | 不能触发睡眠，优先预分配；不能把 GFP_ATOMIC 当无限通行证 | `drivers/net/ethernet/intel/e1000/e1000_main.c:3747` |
+| 硬中断处理程序 | 不可 | 不可 | 常规入口本地 IRQ 关闭；NMI 另论 | 不能触发睡眠，优先预分配；不能把 GFP_ATOMIC 当无限通行证 | `drivers/net/ethernet/intel/e1000/e1000_main.c:3748` |
 | 软中断处理程序 | 不可 | 非 RT 内核中不可 | 通常可 | 常见 GFP_ATOMIC，也要处理失败 | `net/core/dev.c:7745` |
 | tasklet（小任务） | 不可 | 同软中断 | 通常可 | 同软中断 | `drivers/net/ethernet/silan/sc92031.c:833` |
 | 普通 workqueue 的 worker | 可，前提同进程上下文 | 取决于抢占配置及临界区 | 通常可 | 可睡眠处用 GFP_KERNEL | `drivers/net/ethernet/intel/e1000/e1000_main.c:3505` |
 | 普通内核线程 | 可，前提同进程上下文 | 取决于抢占配置及临界区 | 通常可 | 由当时所在临界区决定 | `net/core/dev.c:7735` |
 
-表中的 workqueue 指普通线程化 workqueue；不能推广到所有 workqueue 类型。内核线程也可能进入禁止睡眠的区段，因此“当前有 PID”不能推出“这里可以睡眠”。PREEMPT_RT 会改变 softirq 与 spinlock 的抢占语义，见 `Documentation/locking/locktypes.rst:208`、`Documentation/locking/locktypes.rst:245`。
+表中的 workqueue 指普通线程化 workqueue；不能推广到所有 workqueue 类型。内核线程也可能进入禁止睡眠的区段，因此“当前有 PID”不能推出“这里可以睡眠”。PREEMPT_RT 会改变 softirq 与 spinlock 的抢占语义，见 `Documentation/locking/locktypes.rst:210`、`Documentation/locking/locktypes.rst:245`。
 
 ## 从 IRQ 到 NAPI：安排工作与执行工作
 
@@ -30,7 +30,7 @@ if (likely(napi_schedule_prep(&adapter->napi))) {
 }
 ```
 
-出处：`drivers/net/ethernet/intel/e1000/e1000_main.c:3776`。这里安排 NAPI（收包轮询机制）运行；不是在这一行调用驱动轮询函数。注册轮询回调的位置是 `drivers/net/ethernet/intel/e1000/e1000_main.c:1009`，实际函数为同文件 `:3798` 的 `e1000_clean`。
+出处：`drivers/net/ethernet/intel/e1000/e1000_main.c:3776`。这里安排 NAPI（收包轮询机制）运行；不是在这一行调用驱动轮询函数。注册轮询回调的位置是 `drivers/net/ethernet/intel/e1000/e1000_main.c:1009`，实际函数为同文件 `drivers/net/ethernet/intel/e1000/e1000_main.c:3798` 的 `e1000_clean`。
 
 ```mermaid
 flowchart LR
@@ -47,7 +47,7 @@ threaded NAPI（线程化 NAPI）可创建专用线程，见 `net/core/dev.c:163
 
 ## tasklet、workqueue 与内核线程
 
-tasklet 依托软中断运行，同一个 tasklet 的回调不会同时在两个 CPU 上执行，但不同 tasklet 仍可能并发。核心调用路径见 `kernel/softirq.c:903`、`kernel/softirq.c:950`。网络例子 `sc92031_tasklet` 检查事件后分别处理收发，见 `drivers/net/ethernet/silan/sc92031.c:833`；注册与安排分别在同文件 `:1452`、`:893`。不要把 tasklet 理解为一个可睡眠的线程。
+tasklet 依托软中断运行，同一个 tasklet 的回调不会同时在两个 CPU 上执行，但不同 tasklet 仍可能并发。核心调用路径见 `kernel/softirq.c:903`、`kernel/softirq.c:950`。网络例子 `sc92031_tasklet` 检查事件后分别处理收发，见 `drivers/net/ethernet/silan/sc92031.c:833`；注册与安排分别在同文件 `drivers/net/ethernet/silan/sc92031.c:1452`、`drivers/net/ethernet/silan/sc92031.c:893`。不要把 tasklet 理解为一个可睡眠的线程。
 
 workqueue（工作队列）适合把可延后的工作交给 worker。e1000 超时处理中有：
 
@@ -55,7 +55,7 @@ workqueue（工作队列）适合把可延后的工作交给 worker。e1000 超�
 schedule_work(&adapter->reset_task);
 ```
 
-出处：`drivers/net/ethernet/intel/e1000/e1000_main.c:3502`。真正复位发生在 `e1000_reset_task`，其代码取得 RTNL 锁后调用复位逻辑，见同文件 `:3505`。安排者返回与 worker 开始运行之间没有固定时间间隔。不要据函数调用邻接关系画出同步执行顺序。
+出处：`drivers/net/ethernet/intel/e1000/e1000_main.c:3502`。真正复位发生在 `e1000_reset_task`，其代码取得 RTNL 锁后调用复位逻辑，见同文件 `drivers/net/ethernet/intel/e1000/e1000_main.c:3505`。安排者返回与 worker 开始运行之间没有固定时间间隔。不要据函数调用邻接关系画出同步执行顺序。
 
 普通内核线程与 worker 都由调度器调度；前者通常由子系统管理循环和退出，后者由 workqueue 基础设施管理。NAPI 线程创建处与回调处之间的关系，就是读取内核线程代码时应追踪的“创建入口 → 线程主函数”。
 

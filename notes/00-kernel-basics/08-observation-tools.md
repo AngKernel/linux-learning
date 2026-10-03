@@ -14,7 +14,7 @@ CONFIG_FUNCTION_TRACER、CONFIG_BPF_SYSCALL、CONFIG_KPROBES、CONFIG_PERF_EVENT
 
 ## printk / dmesg：看明确发生过的日志
 
-printk（内核日志输出）家族用于记录事件，dmesg 读取环形日志缓冲区。真实网络例子是 e1000 的 `pr_info` 驱动日志，见 `drivers/net/ethernet/intel/e1000/e1000_main.c:220`，链路状态输出见同文件 `:2450`。
+printk（内核日志输出）家族用于记录事件，dmesg 读取环形日志缓冲区。真实网络例子是 e1000 的 `pr_info` 驱动日志，见 `drivers/net/ethernet/intel/e1000/e1000_main.c:220`，链路状态输出见同文件 `drivers/net/ethernet/intel/e1000/e1000_main.c:2450`。
 
 ```sh
 sudo dmesg -T | rg -i 'e1000|virtio_net|link.*(up|down)|NETDEV'
@@ -25,7 +25,7 @@ sudo dmesg -w
 
 ## /proc/net 与 /sys/class/net：读取系统导出的状态
 
-procfs 与 sysfs 是内核生成内容的接口。网络代码注册 `/proc/net/dev` 与 `softnet_stat` 的位置见 `net/core/net-procfs.c:311`；接口状态和统计目录在 `net/core/net-sysfs.c:457`、`:893`。
+procfs 与 sysfs 是内核生成内容的接口。网络代码注册 `/proc/net/dev` 与 `softnet_stat` 的位置见 `net/core/net-procfs.c:311`；接口状态和统计目录在 `net/core/net-sysfs.c:457`、`net/core/net-sysfs.c:893`。
 
 ```sh
 cat /proc/net/dev
@@ -55,7 +55,7 @@ ss -tmn
 .get_ethtool_stats = e1000_get_ethtool_stats,
 ```
 
-出处：`drivers/net/ethernet/intel/e1000/e1000_ethtool.c:1881`；取值函数见同文件 `:1807`。
+出处：`drivers/net/ethernet/intel/e1000/e1000_ethtool.c:1881`；取值函数见同文件 `drivers/net/ethernet/intel/e1000/e1000_ethtool.c:1807`。
 
 ```sh
 ethtool -i "$IFACE"
@@ -67,7 +67,7 @@ ethtool -k "$IFACE"
 
 ## ftrace：短时确认 ops 的目标执行过
 
-网络目标 `inet_recvmsg` 的定义在 `net/ipv4/af_inet.c:875`，表赋值在同文件 `:1071`。先做两次发现：
+网络目标 `inet_recvmsg` 的定义在 `net/ipv4/af_inet.c:875`，表赋值在同文件 `net/ipv4/af_inet.c:1071`。先做两次发现：
 
 ```sh
 sudo cat /sys/kernel/tracing/available_filter_functions | rg '^inet_recvmsg([[:space:]]|$)'
@@ -101,7 +101,7 @@ cat "$trace_instance/trace"
 SH
 ```
 
-ftrace 文件的含义见 `Documentation/trace/ftrace.rst:259`，instance 删除示例见 `:3730`。命中说明函数实际执行；普通 function tracer 不提供完整参数语义，也不能从同名函数出现次数推导网线上包数。缓冲区容量和跟踪开销同样影响结果。
+ftrace 文件的含义见 `Documentation/trace/ftrace.rst:259`，instance 删除示例见 `Documentation/trace/ftrace.rst:3730`。命中说明函数实际执行；普通 function tracer 不提供完整参数语义，也不能从同名函数出现次数推导网线上包数。缓冲区容量和跟踪开销同样影响结果。
 
 ## bpftrace：按 CPU 汇总 NAPI 工作
 
@@ -113,7 +113,7 @@ sudo bpftrace -lv 'tracepoint:napi:napi_poll'
 sudo bpftrace -e 'tracepoint:napi:napi_poll { @polls[cpu] = count(); @work[cpu] = sum(args.work); } interval:s:5 { exit(); }'
 ```
 
-事件及 work 字段在 `include/trace/events/napi.h:14`、`:23`；网络执行处调用 `trace_napi_poll(n, work, weight)`，见 `net/core/dev.c:7595`。work 是此处回调报告的工作量，不能一概替代硬件 RX 包数；多个 NAPI、回调实现、聚合与预算语义会影响解释。
+事件及 work 字段在 `include/trace/events/napi.h:14`、`include/trace/events/napi.h:23`；网络执行处调用 `trace_napi_poll(n, work, weight)`，见 `net/core/dev.c:7595`。work 是此处回调报告的工作量，不能一概替代硬件 RX 包数；多个 NAPI、回调实现、聚合与预算语义会影响解释。
 
 本例 `args.work` 采用 bpftrace 0.24 文档中的字段语法，见[官方语言说明](https://bpftrace.org/docs/release_024/language)。旧版本应核对本机帮助和版本文档，不在没有解析通过时声称已得到测量结果。[06](06-reading-kernel-code.md) 还给出了不读取参数的 inet_recvmsg kprobe 计数。
 
@@ -129,7 +129,7 @@ sudo perf record -a -g -e net:net_dev_queue -o /tmp/p2-net.perf.data -- sleep 5
 
 第三条会创建 `/tmp/p2-net.perf.data`；之后用 `sudo perf report --stdio -i /tmp/p2-net.perf.data` 阅读并自行保留或删除。它跟踪已选网络事件的调用栈；不是 CPU 热点采样。样本数量受事件频率、缓冲区和丢失记录影响。
 
-网络代码中这两处事件发射分别在 `net/core/dev.c:4727`、`:5863`；事件格式在 `include/trace/events/net.h:144`、`:151`。它们表示特定软件位置，**不保证每条收包路径都命中同一个 receive 事件，也不等于线速包数**。参数帮助已核对本机 perf 文档，v6.18 VM 的采集尚未执行。
+网络代码中这两处事件发射分别在 `net/core/dev.c:4727`、`net/core/dev.c:5863`；事件格式在 `include/trace/events/net.h:144`、`include/trace/events/net.h:151`。它们表示特定软件位置，**不保证每条收包路径都命中同一个 receive 事件，也不等于线速包数**。参数帮助已核对本机 perf 文档，v6.18 VM 的采集尚未执行。
 
 ## 动手：三种计数为什么不相等
 

@@ -12,7 +12,7 @@
 
 x86-64 的 `syscall` 指令进入 `entry_SYSCALL_64`，入口保存寄存器并建立内核执行环境，再调用 `do_syscall_64`。源码锚点是 `arch/x86/entry/entry_64.S:87`、`arch/x86/entry/entry_64.S:121`。这里切换的是 CPU 权限与执行环境，不意味着一定换成另一个进程。
 
-“系统调用表”是编号到处理逻辑的映射。不要把旧版本的函数指针数组调用方式直接套过来：v6.18 的 `x64_sys_call` 使用生成的 case 语句，见 `arch/x86/entry/syscall_64.c:34`；`do_syscall_64` 经 `do_syscall_x64` 到这里，见同文件 `:54`、`:87`。
+“系统调用表”是编号到处理逻辑的映射。不要把旧版本的函数指针数组调用方式直接套过来：v6.18 的 `x64_sys_call` 使用生成的 case 语句，见 `arch/x86/entry/syscall_64.c:34`；`do_syscall_64` 经 `do_syscall_x64` 到这里，见同文件 `arch/x86/entry/syscall_64.c:54`、`arch/x86/entry/syscall_64.c:87`。
 
 ```mermaid
 flowchart TD
@@ -44,7 +44,7 @@ sock = sock_from_file(fd_file(f));
 err = sock_recvmsg(sock, &msg, flags);
 ```
 
-出处：`net/socket.c:2284`。`CLASS(fd, f)` 是带作用域清理的 C 宏，获取时执行 `fdget`，退出作用域时执行 `fdput`，定义见 `include/linux/file.h:85`。`fdget` 最终从当前 task 的 `files` 查找文件；单引用与共享文件表存在不同优化路径，见 `fs/file.c:1153`。这里不要简单推断“每次系统调用都增减同一个 file 引用计数”。
+出处：`net/socket.c:2284`。`CLASS(fd, f)` 是带作用域清理的 C 宏，获取时执行 `fdget`，退出作用域时执行 `fdput`，定义见 `include/linux/file.h:83`。`fdget` 最终从当前 task 的 `files` 查找文件；单引用与共享文件表存在不同优化路径，见 `fs/file.c:1153`。这里不要简单推断“每次系统调用都增减同一个 file 引用计数”。
 
 `sock_from_file` 检查文件的操作表是不是 `socket_file_ops`，然后取得 `private_data` 中的 socket，见 `net/socket.c:530`。这就是本例中 VFS 文件抽象参与的主要位置。
 
