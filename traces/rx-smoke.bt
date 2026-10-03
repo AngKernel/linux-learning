@@ -1,0 +1,11 @@
+#!/usr/bin/env bpftrace
+/* 观察：virtio RX 的 GRO 入口、TCPv4 接收计数；给 selftest 使用。
+ * 运行：sudo /work/traces/run.sh rx-smoke 15
+ * 预期：@calls[gro_receive_skb]: 正整数；@calls[tcp_v4_rcv]: 正整数。
+ * 源码：net/core/gro.c:624；net/ipv4/tcp_ipv4.c:2202。计数包含 SSH 流量。
+ */
+BEGIN { printf("READY rx-smoke\n"); }
+kprobe:gro_receive_skb { @calls["gro_receive_skb"] = count(); }
+kprobe:tcp_v4_rcv { @calls["tcp_v4_rcv"] = count(); }
+interval:s:1 { @seconds = @seconds + 1; if (@seconds >= $1) { exit(); } }
+END { clear(@seconds); }

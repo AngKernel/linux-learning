@@ -1,0 +1,18 @@
+#!/usr/bin/env bpftrace
+/* 观察：硬中断 handler 计数和包围耗时（包括其他设备）；按 IRQ 号区分。
+ * 运行：sudo /work/traces/run.sh irq 15；用 /proc/interrupts 对照 virtio 队列 IRQ。
+ * 预期：@handlers[CPU,IRQ,handler名字]: N；@irq_us[CPU,IRQ] 直方图。
+ * 源码：include/trace/events/irq.h:53、include/trace/events/irq.h:83。
+ * 不根据硬中断次数推断包数：一次通知可驱动很多个 NAPI poll。
+ */
+BEGIN { printf("READY irq\n"); }
+tracepoint:irq:irq_handler_entry {
+  @handlers[cpu, args.irq, str(args.name)] = count();
+  @start[cpu, args.irq] = nsecs;
+}
+tracepoint:irq:irq_handler_exit /@start[cpu, args.irq]/ {
+  @irq_us[cpu, args.irq] = hist((nsecs - @start[cpu, args.irq]) / 1000);
+  delete(@start[cpu, args.irq]);
+}
+interval:s:1 { @seconds = @seconds + 1; if (@seconds >= $1) { exit(); } }
+END { clear(@start); clear(@seconds); }

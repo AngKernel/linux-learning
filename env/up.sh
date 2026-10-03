@@ -23,8 +23,8 @@ if [[ $mode == quick ]]; then
  # 使用 virtme-ng 附带的 virtme-run；强制 9p 避免额外 virtiofsd 依赖。
  # --qemu-opts 必须最后；关闭 microvm 以使用 PCI virtio 网卡。
  cmd=(virtme-run --kdir "$BUILD_DIR" --mods=none --force-9p --disable-microvm
-  --memory "${MEMORY:-4096M}" --cpus "${CPUS:-2}" --user root
-  --rwdir "/work=$REPO" --rodir "/run/ll-host=$LL_STATE/keys/public"
+  --memory "${MEMORY:-4096M}" --cpus "${CPUS:-2}" --user root --empty-passwords
+  --rwdir "/work=$REPO" --rodir "/kernel-build=$BUILD_DIR" --rodir "/run/ll-host=$LL_STATE/keys/public"
   --kopt nokaslr --kopt net.ifnames=0
   --script-sh "/work/env/guest-quick.sh $VM_ID")
  [[ $accel != tcg ]] || cmd+=(--disable-kvm)
@@ -35,10 +35,11 @@ else
  cmd=(qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m "${MEMORY:-4096M}" -smp "${CPUS:-2}"
   -display none -serial stdio -monitor none -no-reboot
   -kernel "$BUILD_DIR/arch/x86/boot/bzImage"
-  -append "root=${ROOT_DEVICE:-/dev/vda1} rw console=ttyS0 nokaslr"
+  -append "root=${ROOT_DEVICE:-/dev/vda1} rw rootwait console=ttyS0 nokaslr"
   -drive "file=$VM_DIR/root.qcow2,if=virtio,format=qcow2"
   -drive "file=$VM_DIR/seed.img,if=virtio,format=raw,readonly=on"
   -virtfs "local,path=$REPO,mount_tag=llrepo,security_model=mapped-xattr,id=llrepo"
+  -virtfs "local,path=$BUILD_DIR,mount_tag=llbuild,security_model=none,readonly=on,id=llbuild"
   -netdev user,id=wan -device "virtio-net-pci,netdev=wan,mac=$UPLINK_MAC"
   "${qargs[@]}")
 fi

@@ -36,5 +36,6 @@ if bad: sys.exit('配置未生效（请修复依赖）：\n'+'\n'.join(bad))
 PYCHECK
 [[ ${1:-} != --configure ]] || exit 0
 make -C "$KERNEL_SRC" O="$BUILD_DIR" ARCH=x86_64 -j"${JOBS:-$(nproc)}" bzImage modules scripts_gdb
-python3 "$KERNEL_SRC/scripts/clang-tools/gen_compile_commands.py" -d "$BUILD_DIR" -o "$BUILD_DIR/compile_commands.json"
+make -C "$KERNEL_SRC" O="$BUILD_DIR" ARCH=x86_64 INSTALL_MOD_PATH="$BUILD_DIR/guest-modules" modules_install
+python3 "$KERNEL_SRC/scripts/clang-tools/gen_compile_commands.py" --ar ar -d "$BUILD_DIR" -o "$BUILD_DIR/compile_commands.json"
 echo "完成：$BUILD_DIR/arch/x86/boot/bzImage；clangd --compile-commands-dir=$BUILD_DIR"

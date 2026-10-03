@@ -47,8 +47,9 @@ users:
       - $key
 ssh_pwauth: false
 package_update: true
-packages: [bpftrace, bpftool, linux-perf, iperf3, tcpdump, iproute2, ethtool, openssh-server]
+packages: [bpftrace, bpftool, linux-perf, iperf3, iptables, nftables, tcpdump, iproute2, ethtool, openssh-server]
 mounts:
+  - [llbuild, /kernel-build, 9p, 'trans=virtio,version=9p2000.L,msize=262144,ro,nofail', '0', '0']
   - [llrepo, /work, 9p, 'trans=virtio,version=9p2000.L,msize=262144,rw,nofail', '0', '0']
 write_files:
   - path: /etc/systemd/system/ll-iperf.service
@@ -62,7 +63,7 @@ write_files:
       [Install]
       WantedBy=multi-user.target
 runcmd:
-  - [mkdir, -p, /work]
+  - [mkdir, -p, /work, /kernel-build]
   - [mount, -a]
   - [systemctl, daemon-reload]
   - [systemctl, enable, --now, ll-iperf.service]
