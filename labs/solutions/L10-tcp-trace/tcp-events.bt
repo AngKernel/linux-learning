@@ -1,0 +1,22 @@
+#!/usr/bin/env bpftrace
+/* Usage: sudo bpftrace -B line tcp-events.bt PORT SECONDS
+ * v6.18 fields checked; IPv4 only; guest execution UNTESTED.
+ * Ports are already host-order. skaddr is not a permanent connection ID.
+ */
+BEGIN { printf("READY L10\n"); }
+tracepoint:sock:inet_sock_set_state
+/args.family == 2 && args.protocol == 6 && (args.sport == $1 || args.dport == $1)/
+{
+  printf("%llu STATE cpu=%d sk=%p %s:%u->%s:%u %d->%d\n",
+         nsecs, cpu, args.skaddr, ntop(args.saddr), args.sport,
+         ntop(args.daddr), args.dport, args.oldstate, args.newstate);
+}
+tracepoint:tcp:tcp_retransmit_skb
+/args.family == 2 && (args.sport == $1 || args.dport == $1)/
+{
+  printf("%llu RETRANS cpu=%d sk=%p %s:%u->%s:%u state=%d err=%d\n",
+         nsecs, cpu, args.skaddr, ntop(args.saddr), args.sport,
+         ntop(args.daddr), args.dport, args.state, args.err);
+}
+interval:s:1 { @seconds = @seconds + 1; if (@seconds >= $2) { exit(); } }
+END { clear(@seconds); }

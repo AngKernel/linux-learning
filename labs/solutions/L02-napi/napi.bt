@@ -1,0 +1,25 @@
+#!/usr/bin/env bpftrace
+/* v6.18 tracepoint fields checked; guest execution UNTESTED.
+ * Usage: sudo bpftrace -B line napi.bt 25
+ */
+BEGIN { printf("READY L02\n"); }
+tracepoint:irq:softirq_entry /args.vec == 3/
+{
+  @rx_calls[cpu] = count();
+  @start[cpu] = nsecs;
+}
+tracepoint:irq:softirq_exit /args.vec == 3 && @start[cpu]/
+{
+  @rx_us[cpu] = hist((nsecs - @start[cpu]) / 1000);
+  delete(@start[cpu]);
+}
+tracepoint:napi:napi_poll
+{
+  @poll_work[cpu, str(args.dev_name), args.napi] = hist(args.work);
+  @poll_budget[cpu, str(args.dev_name), args.napi] = hist(args.budget);
+  if (args.budget > 0 && args.work >= args.budget) {
+    @at_budget[cpu, str(args.dev_name), args.napi] = count();
+  }
+}
+interval:s:1 { @seconds = @seconds + 1; if (@seconds >= $1) { exit(); } }
+END { clear(@start); clear(@seconds); }

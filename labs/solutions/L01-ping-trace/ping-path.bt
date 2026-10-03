@@ -1,0 +1,20 @@
+#!/usr/bin/env bpftrace
+/* v6.18 fields/functions checked; guest attachment and traffic UNTESTED.
+ * Usage: sudo bpftrace -B line ping-path.bt 15
+ * Counts include unrelated traffic. No per-packet identity is inferred.
+ */
+BEGIN { printf("READY L01\n"); }
+kprobe:virtnet_poll,
+kprobe:gro_receive_skb,
+kprobe:ip_rcv,
+kprobe:ip_list_rcv,
+kprobe:ip_local_deliver,
+kprobe:icmp_rcv,
+kprobe:ip_local_out,
+kprobe:__dev_queue_xmit
+{
+  printf("%llu cpu=%d %s\n", nsecs, cpu, probe);
+  @calls[probe] = count();
+}
+interval:s:1 { @seconds = @seconds + 1; if (@seconds >= $1) { exit(); } }
+END { clear(@seconds); }
