@@ -6,7 +6,7 @@
 1. 当前在 main 分支，工作区干净，AGENTS.md 已提交。任一条件不满足就停下并告诉我。
 2. 从 AGENTS.md 中读出内核源码路径，确认目录存在，并用 git describe 确认是 v6.18。
 3. 检查内核仓库是否为浅克隆（git rev-parse --is-shallow-repository）。P5 需要完整的 git 历史：如果是浅克隆，先执行 git fetch --unshallow；如果耗时过长或失败，记录下来，并把 P5 放到最后启动。
-4. 把 prompts/ 中所有提示词里的 <内核源码路径> 占位符替换为实际路径，作为一次单独的提交。
+4. 把 prompts/ 中所有提示词里的 /home/chen/code/linux-lab/src/linux-6.18 占位符替换为实际路径，作为一次单独的提交。
 
 ## 第 1 步：任务清单
 

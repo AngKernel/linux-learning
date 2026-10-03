@@ -1,5 +1,5 @@
 背景：我在读 Linux 6.18 网络子系统源码（从未读过内核），需要一个能反复使用的实验环境：编译内核、启动虚拟机、用 virtio_net 收发流量、用 bpftrace / ftrace / perf 观察内核路径，必要时用 gdb 单步调试。
-仓库：linux-learning（我的学习仓库），内核源码在 <内核源码路径>。环境相关内容放在 env/，追踪脚本放在 traces/。
+仓库：linux-learning（我的学习仓库），内核源码在 /home/chen/code/linux-lab/src/linux-6.18。环境相关内容放在 env/，追踪脚本放在 traces/。
 
 第零步：先检查宿主机环境（发行版、是否支持 KVM、是否是 WSL2 或其他嵌套虚拟化），把结论写进 env/README.md，后续方案按实际环境调整。如果缺少依赖，列出安装命令，不要直接用 sudo 安装。
 
