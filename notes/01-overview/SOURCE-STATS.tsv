@@ -1,0 +1,23 @@
+# source=v6.18
+# metric=wc -l; tracked .c/.h only; includes comments and blank lines
+scope	files	physical_lines
+net	1811	1304636
+net/core	74	88089
+net/ipv4	134	114700
+net/ipv6	103	77813
+net/sched	81	62658
+net/netfilter	257	131739
+net/packet	3	5239
+net/netlink	6	5798
+net/bridge	62	37268
+net/xdp	9	4117
+net/xfrm	22	23405
+net/mptcp	24	17831
+net/unix	6	5286
+include/net	383	116215
+include/linux	2747	640312
+drivers/net	6049	5185739
+drivers/net/ethernet	3044	2620918
+drivers/net/wireless	2090	1933741
+drivers/net/phy	118	92331
+include/linux selected 22 headers	22	21956
