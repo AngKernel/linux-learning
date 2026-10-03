@@ -43,4 +43,4 @@ int lab_udp(struct xdp_md *ctx)
     return XDP_PASS;
 #endif
 }
-char license[] SEC("license") = "GPL";
+char lab_license[] SEC("license") = "GPL";
