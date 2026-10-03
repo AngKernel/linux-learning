@@ -49,7 +49,7 @@ IPv4 使用 `bihash_16_8`，IPv6 使用 `bihash_48_8`，见 `src/vnet/session/se
 | 事情 | 此版本实现与证据 |
 |---|---|
 | RTO / SYN 重传 | worker timer wheel 触发 handlers；`src/vnet/tcp/tcp.c:1227`、`src/vnet/tcp/tcp_output.c:1309` |
-| TIME_WAIT | WAITCLOSE timer 的 TIME_WAIT 分支安排清理；`src/vnet/tcp/tcp.c:1217`；进入 TIME_WAIT 后的设置见 `src/vnet/tcp/tcp_input.c:1057` |
+| TIME_WAIT | WAITCLOSE timer 的 TIME_WAIT 分支安排清理；`src/vnet/tcp/tcp.c:1217`；进入 TIME_WAIT 后的设置见 `src/vnet/tcp/tcp_input.c:2277` |
 | 轮结构 | 两个 wheel，每环 1024 slots；`src/vnet/tcp/tcp_types.h:461`；tick 配置 0.0001 秒见 `src/vnet/tcp/tcp_types.h:81` |
 | 时间来源与驱动 | `vlib_time_now()` 缓存到 worker；`src/vnet/tcp/tcp_inlines.h:249`；`tcp_update_time()` 执行 expire / dispatch，见 `src/vnet/tcp/tcp.c:1299` |
 | delayed ACK 对应机制 | 此版本 timer 枚举没有 DELACK，见 `src/vnet/tcp/tcp_types.h:64`。顺序接收调用 `tcp_program_ack()`，见 `src/vnet/tcp/tcp_input.c:1278`；它设置 SNDACK 并投递 custom TX event，见 `src/vnet/tcp/tcp_output.c:1019`；调度后合并/发送 ACK，见 `src/vnet/tcp/tcp_output.c:1964`、`src/vnet/tcp/tcp_output.c:2049` |

@@ -37,7 +37,7 @@ TX `tcp_write()` 不设置 `TCP_WRITE_FLAG_COPY` 时引用应用数据；应用�
 
 ## 3. 连接查找：链表换小内存，不是大流表
 
-`src/core/tcp_in.c:250` 起依次扫描 active PCB（Protocol Control Block，协议控制块）链表。匹配 remote/local IP 和 port 后，将命中的 PCB 移到链表头，利用流量局部性。没有命中才查 TIME_WAIT 链表及监听链表，见 `src/core/tcp_in.c:288`、`src/core/tcp_in.c:320`。
+`src/core/tcp_in.c:250` 起依次扫描 active PCB（Protocol Control Block，协议控制块）链表。匹配 remote/local IP 和 port 后，将命中的 PCB 移到链表头，利用流量局部性。没有命中才查 TIME_WAIT 链表及监听链表，见 `src/core/tcp_in.c:286`、`src/core/tcp_in.c:318`。
 
 这里没有四元组哈希表，更没有按 RSS 自动分片的每核连接表。全局链表变量见 `src/core/tcp.c:176`。平均代价取决于连接数量和包的局部性：单流常命中表头，多条交替活跃连接会增加扫描量。这是从循环和 move-to-front 行为推导的复杂度，不是性能实测结论。
 
@@ -85,7 +85,7 @@ raw API 注册 `tcp_recv()`、`tcp_sent()` 回调，见 `src/core/tcp.c:2020`、
 
 ## 9. 项目怎样测试，以及读者能亲眼验证什么
 
-单元测试会构造 TCP 包、驱动输入和计时，并断言状态。可从 `test/unit/tcp/test_tcp.c:160` 的顺序接收、`:446` 的快重传恢复、`:717` 的 RTO 与序号回绕读起。`test/unit/Makefile:7` 把 `check` 转交 Unix port。
+单元测试会构造 TCP 包、驱动输入和计时，并断言状态。可从 `test/unit/tcp/test_tcp.c:160` 的顺序接收、`test/unit/tcp/test_tcp.c:446` 的快重传恢复、`test/unit/tcp/test_tcp.c:717` 的 RTO 与序号回绕读起。`test/unit/Makefile:7` 把 `check` 转交 Unix port。
 
 本任务只核实源码，**没有构建或运行项目测试，没有抓包结果**。可在固定 checkout 执行下列只读练习，先写预测，再查看代码：
 

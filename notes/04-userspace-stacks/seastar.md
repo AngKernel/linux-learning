@@ -78,7 +78,7 @@ TIME_WAIT 不是“采用了更高效的计时器”——本版本确实没有�
 | Window scaling | 有解析、协商输出和窗口运算 | `src/net/tcp.cc:52`、`src/net/tcp.cc:96`、`include/seastar/net/tcp.hh:1090` |
 | Timestamps | 虽有 option 类型和字段，parse/fill 没有对应正常协商处理；本篇不记为已支持 | `include/seastar/net/tcp.hh:141`、`src/net/tcp.cc:34`、`src/net/tcp.cc:81` |
 | TSO | TCP 在硬件能力启用时填写分段大小；DPDK 检查 TX capability；硬件实效未测 | `include/seastar/net/tcp.hh:1680`、`src/net/dpdk.cc:1590`、`src/net/dpdk.cc:636` |
-| LRO | DPDK backend 按配置和设备 RX capability 启用，并有 LRO mbuf 接收路径；不代表所有后端都有 | `src/net/dpdk.cc:1556`、`src/net/dpdk.cc:1973` |
+| LRO | DPDK backend 在构建具备 `RTE_ETHDEV_HAS_LRO_SUPPORT` 时，再按配置和设备 RX capability 启用，并有 LRO mbuf 接收路径；不代表所有后端都有 | `src/net/dpdk.cc:1554`、`src/net/dpdk.cc:1973` |
 | TIME_WAIT / keepalive | TIME_WAIT timer 未完成；native keepalive 明确报告不支持 | `include/seastar/net/tcp.hh:619`、`src/net/native-stack-impl.hh:271` |
 
 尤其不要把 Seastar 上层应用的生产使用情况直接当作 native TCP 的成熟度证据：应用可能使用 POSIX backend，那里实际运行的是内核协议栈。

@@ -53,7 +53,7 @@ RSS 配置启用后与硬件支持的类型取交集；可选 symmetric RSS key 
 
 传统多进程路线使各进程持有自己的协议全局状态，再由 queue/RSS 分配流。此版本还明确支持 `thread_mode` 的单进程多线程初始化：配置将进程数折成 1，并保留 worker 数，见 `lib/ff_config.c:1601`；主循环初始化当前 stack thread，见 `lib/ff_dpdk_if.c:3617`，执行 loop 通过 EAL lcore launch，见 `lib/ff_dpdk_if.c:3998`。
 
-可确认线程入口和适配层，**尚未完成此新模式下全部 PCB/VNET 全局状态、锁与共享资源的审计**。例如 `lib/ff_lock.c:62` 的 lock-class wrapper 是空实现，不能据此推导所有锁都不存在；也不能据 FreeBSD 源码中有锁断言就保证任意应用线程可共享连接。线程模型细化是本篇最优先的【未确认】项。
+worker 初始化还会分配独立 VNET（FreeBSD 网络虚拟化状态域）与 callwheel，见 `lib/ff_freebsd_init.c:175`、`lib/ff_freebsd_init.c:211`、`lib/ff_freebsd_init.c:213`。因此可以确认每线程栈实例的设计意图；**尚未完成此新模式下全部 PCB/VNET 全局状态、锁与共享资源的审计**。例如 `lib/ff_lock.c:62` 的 lock-class wrapper 是空实现，不能据此推导所有锁都不存在；也不能据 FreeBSD 源码中有锁断言就保证任意应用线程可共享连接。线程模型细化是本篇最优先的【未确认】项。
 
 连接固定到核需要分流、应用调用线程和协议上下文一致；RSS 不会自动解决 app 跨线程调用。此版本是否在所有 active/passive open、reload 和 offload 组合下均保持该约束，没有实跑验证。
 
