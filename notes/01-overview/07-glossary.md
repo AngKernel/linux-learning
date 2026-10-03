@@ -16,7 +16,7 @@
 | 用户栈 | `../04-userspace-stacks/` |
 | 实验 | `../../labs/`，追踪配套 `../../traces/` |
 
-对象名称已在对应定义核对：include/linux/net.h:116、include/net/sock.h:354、include/linux/tcp.h:200、include/linux/skbuff.h:885、include/linux/netdevice.h:379、include/net/dst.h:26、include/net/net_namespace.h:61、include/net/request_sock.h:51、include/net/inet_timewait_sock.h:33。NAPI、卸载和 CPU 分发术语另对应 Documentation/networking/napi.rst:8、Documentation/networking/segmentation-offloads.rst:15、Documentation/networking/scaling.rst:1；TCP 窗口与序号状态见 include/linux/tcp.h:226、include/linux/tcp.h:305。
+对象名称已在对应定义核对：include/linux/net.h:116、include/net/sock.h:354、include/linux/tcp.h:200、include/linux/skbuff.h:885、include/linux/netdevice.h:379、include/net/dst.h:26、include/net/net_namespace.h:61、include/net/request_sock.h:51、include/net/inet_timewait_sock.h:33。NAPI、卸载和 CPU 分发术语另对应 Documentation/networking/napi.rst:9、Documentation/networking/segmentation-offloads.rst:15、Documentation/networking/scaling.rst:17；TCP 窗口与序号状态见 include/linux/tcp.h:226、include/linux/tcp.h:305。
 
 ## 对象与接口
 

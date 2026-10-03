@@ -34,7 +34,7 @@ IP 层准备 IP 报文，并利用路由确定输出接口、下一跳等信息�
 
 ### 7. 服务器收包并交给业务
 
-服务器网卡将数据写入接收缓冲区，驱动通过 NAPI（网络事件轮询机制）处理接收事件，把合适的数据送入协议栈。IP 判断这是本机流量，TCP 找到连接、检查序号并推进接收状态，应用随后读取可交付的字节。中断通常只是触发处理的入口；NAPI 常在 softirq（软中断）上下文执行，也支持线程和 busy polling（忙轮询），不能把它写成“硬中断里处理完 TCP”。依据见 Documentation/networking/napi.rst:8、net/ipv4/ip_input.c:248、net/ipv4/tcp_ipv4.c:2202。
+服务器网卡将数据写入接收缓冲区，驱动通过 NAPI（网络事件轮询机制）处理接收事件，把合适的数据送入协议栈。IP 判断这是本机流量，TCP 找到连接、检查序号并推进接收状态，应用随后读取可交付的字节。中断通常只是触发处理的入口；NAPI 常在 softirq（软中断）上下文执行，也支持线程和 busy polling（忙轮询），不能把它写成“硬中断里处理完 TCP”。依据见 Documentation/networking/napi.rst:9、net/ipv4/ip_input.c:248、net/ipv4/tcp_ipv4.c:2202。
 
 ### 8. 响应沿对称的分层方向返回
 

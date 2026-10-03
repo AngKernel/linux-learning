@@ -51,7 +51,7 @@ flowchart LR
     O -->|INET适配层| P
 ```
 
-`socket.ops` 中的操作多数接受 `struct socket *`，描述应用侧接口；`sock.sk_prot` 中的操作接受 `struct sock *`，描述传输协议实现。发送路径中，上层入口先经 socket 操作，INET 层再委托给协议操作；它们不是同一张表的两个别名。两个定义的参数形态可对照 include/linux/net.h:161、include/net/sock.h:1259；已注册的发送成员见 net/ipv4/af_inet.c:1070、net/ipv4/tcp_ipv4.c:3502。
+`socket.ops` 中的操作多数接受 `struct socket *`，描述应用侧接口；`sock.sk_prot` 中的操作接受 `struct sock *`，描述传输协议实现。发送路径中，上层入口先经 socket 操作，INET 层再委托给协议操作；它们不是同一张表的两个别名；实际分派见 net/socket.c:727、net/ipv4/af_inet.c:853。两个定义的参数形态可对照 include/linux/net.h:161、include/net/sock.h:1259；已注册的发送成员见 net/ipv4/af_inet.c:1070、net/ipv4/tcp_ipv4.c:3502。
 
 TCP 状态还通过 C 结构嵌套扩展：`tcp_sock` 包含 `inet_connection_sock`，后者包含 `inet_sock`，后者包含 `sock`。这不是 C++ 继承，却提供了从公共部分找到协议专用状态的布局；依据 include/linux/tcp.h:207、include/net/inet_connection_sock.h:80、include/net/inet_sock.h:214。`socket` 与这些内嵌协议状态是分开的对象。
 

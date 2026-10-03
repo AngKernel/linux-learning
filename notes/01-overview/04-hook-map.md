@@ -77,13 +77,14 @@ flowchart TB
 | 接口 | 所在阶段和用途 | 核实锚点 |
 |---|---|---|
 | cgroup socket / sock_addr（按控制组管理 socket 或地址操作） | 创建 socket、connect/bind 等动作处约束或修改应用端点；适合按工作负载身份下发连接策略 | net/ipv4/af_inet.c:392；net/ipv4/af_inet.c:459；net/ipv4/tcp_ipv4.c:220 |
+| cgroup sockopt（socket 参数操作） | 在 setsockopt/getsockopt 处约束或扩展参数操作，属于控制动作而非逐包路径 | net/socket.c:2342；net/socket.c:2426 |
 | cgroup skb ingress/egress | 对归属相应 socket/cgroup 的收发流量做策略；不要假定覆盖所有纯转发包 | net/core/filter.c:150；net/ipv4/ip_output.c:322 |
 | sockops（socket 操作事件 BPF） | 在 TCP 事件处观察连接状态、调节允许的参数、获得回调；不是每包防火墙 | include/net/tcp.h:2780；net/ipv4/tcp_input.c:179 |
 | sockmap/sockhash + sk_msg/sk_skb | 针对已纳入映射的 socket 执行消息判决、流解析/判决和重定向；用于代理等连接间数据处理 | net/core/sock_map.c:1486 |
-| reuseport BPF（同端口 socket 选择） | 在一组复用端口的 socket 中选择接收目标；是本机服务分发的一种方式 | net/core/filter.c:1627；include/uapi/linux/bpf.h:1062 |
+| reuseport BPF（同端口 socket 选择） | 在一组复用端口的 socket 中选择接收目标；是本机服务分发的一种方式 | net/ipv4/inet_hashtables.c:399；net/core/filter.c:1627；include/uapi/linux/bpf.h:1062 |
 | LWT BPF（轻量隧道路由扩展） | 路由相关的输入、输出、发送扩展；适合选定路由的封装和重定向 | include/uapi/linux/bpf.h:1051 |
 | flow dissector BPF（流字段解析） | 为栈的流解析需求提供字段，不是一条全包默认放行/丢弃链 | include/uapi/linux/bpf.h:1063 |
-| LSM（Linux 安全模块） | socket 调用和接收等安全检查，与包过滤框架不同 | net/core/filter.c:157；net/socket.c:737 |
+| LSM（Linux 安全模块） | socket 调用和接收等安全检查，与包过滤框架不同 | net/core/filter.c:156；net/socket.c:737 |
 | tracepoint/kprobe 等追踪接口 | 观察处理事件、延迟、丢包原因；普通追踪程序不是通用转发判决入口 | 已核实的 NAPI trace 调用 net/core/dev.c:7595；完整追踪方案见 `../../traces/` |
 
 这些接口有程序类型、允许访问的上下文和配置限制。不能因为都是 eBPF（内核验证并执行的可编程机制），就把一份程序原封不动地从 XDP 挪到 sockops；也不能认为 sockops 会自动重组 TCP 应用消息。

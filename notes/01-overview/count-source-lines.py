@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """只读统计 v6.18 已跟踪 C/H 文件的 wc -l 物理行数。"""
 import argparse
+import os
 from pathlib import Path
 import subprocess
 
@@ -35,7 +36,8 @@ def main():
         lines = 0
         for i in range(0, len(files), 200):
             output = subprocess.check_output(
-                ['wc', '-l', '--', *files[i:i + 200]], cwd=root, text=True
+                ['wc', '-l', '--', *files[i:i + 200]], cwd=root, text=True,
+                env={**os.environ, 'LC_ALL': 'C'}
             )
             lines += sum(int(row.split()[0]) for row in output.splitlines()
                          if row.split()[-1] != 'total')
