@@ -147,7 +147,7 @@ GRO 是减少后续协议栈逐包工作，不是 TCP 字节流乱序重组，�
 
 ## 6. 唤醒 epoll 与 recv 拷贝
 
-默认数据就绪回调在 `net/core/sock.c:3662` 初始化为 `sock_def_readable()`：
+默认数据就绪回调在 `net/core/sock.c:3662` 初始化为 `sock_def_readable()`。注册侧，epoll 安装 poll 回调后调用 `ep_item_poll()`（`fs/eventpoll.c:1639`、`fs/eventpoll.c:1648`），通过 socket 的 `sock_poll()`（`net/socket.c:1425`）进入 `tcp_poll()`（`net/ipv4/tcp.c:536`）。后者的 `sock_poll_wait()` 将等待项关联到 socket wait queue，见 `include/net/sock.h:2383`。数据到达后的通知链为：
 
 1. `sock_def_readable()`，`net/core/sock.c:3542` 从 `sk->sk_wq` 找到 socket wait queue，按可读事件唤醒等待项。
 2. 若应用已经通过 epoll 注册该 socket，`ep_ptable_queue_proc()`，`fs/eventpoll.c:1358` 把 `ep_poll_callback()` 注册为等待回调，见 `fs/eventpoll.c:1374`。
@@ -169,7 +169,7 @@ GRO 是减少后续协议栈逐包工作，不是 TCP 字节流乱序重组，�
 
 | 结构 / 字段 | 本章用途与源码 |
 |---|---|
-| `receive_queue.vq / napi / xdp_prog / alloc_frag` | 对应队列、调度实例、XDP 程序与页片段分配状态，`drivers/net/virtio_net.c:326`。 |
+| `receive_queue.vq / napi / xdp_prog / alloc_frag` | 对应队列、调度实例、XDP 程序与页片段分配状态，`drivers/net/virtio_net.c:327`。 |
 | `napi_struct.poll_list / state / weight / poll / gro` | 调度归属、并发状态、单次预算、驱动入口、GRO 状态，`include/linux/netdevice.h:379`。 |
 | `sk_buff` 的 `data / len / data_len / dev / sk / protocol` | 数据视图、非线性长度、接口/socket 上下文和协议；结构见 `include/linux/skbuff.h:885`。skb 的 metadata 和 packet storage 并非同一个对象。 |
 | `sock.sk_receive_queue / sk_backlog / sk_wq / sk_data_ready` | 已接收字节队列、待处理协议包、等待者和通知回调，`include/net/sock.h:399`、`include/net/sock.h:408`、`include/net/sock.h:435`。 |
@@ -279,6 +279,8 @@ rmdir "$RX_TRACE"
 SH
 less /tmp/ll-rx.trace
 ```
+
+若符号预检失败，记录缺少的名字并执行停止/导出段清理实例；不能把未启用成功的追踪解释成没有经过该路径。
 
 预期可辨认这样的片段，实际名称、内联省略、CPU 与层次依构建而变：
 
