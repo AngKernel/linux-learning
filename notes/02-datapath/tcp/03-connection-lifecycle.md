@@ -82,7 +82,7 @@ sequenceDiagram
 | 顺序 | 函数与源码 | 做什么 |
 |---|---|---|
 | 1 | `inet_stream_connect()`，`net/ipv4/af_inet.c:744` → `__inet_stream_connect()`，`net/ipv4/af_inet.c:626` | 处理阻塞语义，通过协议 ops 开始连接 |
-| 2 | `tcp_v4_connect()`，`net/ipv4/tcp_ipv4.c:224` | 解析 IPv4 对端、路由与端口，设 SYN_SENT（同文件 308 行），调用 `tcp_connect()` |
+| 2 | `tcp_v4_connect()`，`net/ipv4/tcp_ipv4.c:224` | 解析 IPv4 对端、路由与端口，设 SYN_SENT（`net/ipv4/tcp_ipv4.c:308`），调用 `tcp_connect()` |
 | 3 | `tcp_connect()`，`net/ipv4/tcp_output.c:4249` | 初始化连接的发送状态，构造 SYN，发出并安排重传 |
 | 4 | `tcp_transmit_skb()` 的调用，`net/ipv4/tcp_output.c:4330` | 将 SYN 交给 TCP 下层发送；发送后仍保留重传所需状态 |
 
@@ -160,10 +160,10 @@ SYN cookies（SYN 状态编码）把可验证信息编码进 SYN-ACK 的序列�
 
 ### 正常主动关闭的时间线
 
-1. 应用 `shutdown(SHUT_WR)`：`tcp_shutdown()`，`net/ipv4/tcp.c:3055`，只关闭发送方向。`tcp_close_state()`，同文件 3040 行，按表将 ESTABLISHED 改成 FIN_WAIT1。`tcp_send_fin()`，`net/ipv4/tcp_output.c:3757`，把 FIN 加到待发数据尾部或单独排队。发起 FIN 不代表它已离开网卡。
+1. 应用 `shutdown(SHUT_WR)`：`tcp_shutdown()`，`net/ipv4/tcp.c:3055`，只关闭发送方向。`tcp_close_state()`，`net/ipv4/tcp.c:3040`，按表将 ESTABLISHED 改成 FIN_WAIT1。`tcp_send_fin()`，`net/ipv4/tcp_output.c:3757`，把 FIN 加到待发数据尾部或单独排队。发起 FIN 不代表它已离开网卡。
 2. 对端按序消费 FIN：`tcp_fin()`，`net/ipv4/tcp_input.c:4675`，标记接收方向结束，并把 ESTABLISHED 改成 CLOSE_WAIT。它安排 ACK，但仍允许本地应用发送尚未完成的数据。
 3. 主动方收到确认自己 FIN 的 ACK：`tcp_rcv_state_process()`，`net/ipv4/tcp_input.c:7057`，在 `snd_una == write_seq` 时进入 FIN_WAIT2。
-4. 被动方应用关闭：`tcp_close()`，`net/ipv4/tcp.c:3295` → `__tcp_close()`，同文件 3123 行 → `tcp_close_state()` → `tcp_send_fin()`；CLOSE_WAIT 进入 LAST_ACK。这里假定已读完收到的数据且未启用立即 abort 的 linger 设置。
+4. 被动方应用关闭：`tcp_close()`，`net/ipv4/tcp.c:3295` → `__tcp_close()`，`net/ipv4/tcp.c:3123` → `tcp_close_state()` → `tcp_send_fin()`；CLOSE_WAIT 进入 LAST_ACK。这里假定已读完收到的数据且未启用立即 abort 的 linger 设置。
 5. 主动方收到对端 FIN：`tcp_fin()` 的 FIN_WAIT2 分支，`net/ipv4/tcp_input.c:4710`，发最后一个 ACK，再调用 `tcp_time_wait()`，`net/ipv4/tcp_minisocks.c:328`。
 6. 被动方收到最终 ACK：`tcp_rcv_state_process()` 的 LAST_ACK 分支，`net/ipv4/tcp_input.c:7117`，结束完整 socket。
 
@@ -193,7 +193,7 @@ SYN cookies（SYN 状态编码）把可验证信息编码进 SYN-ACK 的序列�
 
 ## 8. 验证实验：观察建连、队列与主动关闭
 
-**执行状态：未在 v6.18 QEMU 客体实跑。以下是可复现实验命令和示意输出，不是测量记录。** 不在宿主执行。客体需要 root、Python 3、iproute2 和 bpftrace；先确认 `uname -r` 对应本仓库 v6.18 构建。tracepoint 的定义与字段已核对 `include/trace/events/sock.h:140`。相关配置名字已核对：`CONFIG_BPF_EVENTS`（`kernel/trace/Kconfig:810`）、`CONFIG_KPROBE_EVENTS`（同文件 739 行）；是否在客体启用须现场确认。
+**执行状态：未在 v6.18 QEMU 客体实跑。以下是可复现实验命令和示意输出，不是测量记录。** 不在宿主执行。客体需要 root、Python 3、iproute2 和 bpftrace；先确认 `uname -r` 对应本仓库 v6.18 构建。tracepoint 的定义与字段已核对 `include/trace/events/sock.h:140`。相关配置名字已核对：`CONFIG_BPF_EVENTS`（`kernel/trace/Kconfig:810`）、`CONFIG_KPROBE_EVENTS`（`kernel/trace/Kconfig:739`）；是否在客体启用须现场确认。
 
 终端 A 先检查并启动状态追踪：
 
