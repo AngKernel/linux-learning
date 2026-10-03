@@ -37,7 +37,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 sysctl -w "net.ipv4.tcp_congestion_control=$algo"
 if [[ $condition == netem ]]; then
-  tc qdisc replace dev "$iface" root handle 109: netem delay 20ms loss 0.5% limit 10000
+  tc qdisc replace dev "$iface" root handle 209: netem delay 20ms loss 0.5% limit 10000
 fi
 tc -s qdisc show dev "$iface" > "$out/qdisc-during.txt"
 (

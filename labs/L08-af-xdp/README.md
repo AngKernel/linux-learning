@@ -23,7 +23,7 @@
      --mode burst --count 20000 --pps 1000 --size 64
    ```
 
-   VM1 结束 `--sink`，记录其 `received` 与发送端实际 pps。反复做 100、500、1000 pps；再逐步升高直至出现瓶颈，Python 发包器若先饱和，则该轮只能测到下界。其他参数保持一致。
+   VM1 结束 `--sink`，记录其 `received` 与发送端实际 pps。非持久 TUN 会随程序最后一个 fd 关闭而消失，每轮重新启动程序后都要重新配置 `.1/24` 和 link up，再发流。反复做 100、500、1000 pps；再逐步升高直至出现瓶颈，Python 发包器若先饱和，则该轮只能测到下界。其他参数保持一致。
 4. **AF_XDP copy 收包。** 先关闭 TUN 程序。VM1 运行 `xdp-bench xsk-drop -q 0 -C copy -A native -d 30 "$LAB_IF"`，VM2 重复同样发流。**该工具接管所选队列的全部输入，可能让走数据 NIC 的 SSH 和 ARP 暂时不可用**；发流工具使用已知 MAC，管理使用 QEMU 控制台或独立管理口。只有数据 SSH 时，从 VM1 shell 预先启动这个有界后台轮次，再回 VM2 发包：
 
    ```bash

@@ -84,7 +84,7 @@ bpftrace --version
 
 以下完整路径均基于 v6.18：
 
-- `/home/chen/code/linux-lab/src/linux-6.18/drivers/net/virtio_net.c:3114`：`virtnet_poll`；同文件 `:2610` 将 skb 交给 GRO。
+- `/home/chen/code/linux-lab/src/linux-6.18/drivers/net/virtio_net.c:3114`：`virtnet_poll`；`/home/chen/code/linux-lab/src/linux-6.18/drivers/net/virtio_net.c:2610` 将 skb 交给 GRO。
 - `/home/chen/code/linux-lab/src/linux-6.18/include/linux/netdevice.h:4190`：`napi_gro_receive` 是 inline 包装；实际探测候选为 `/home/chen/code/linux-lab/src/linux-6.18/net/core/gro.c:624` 的 `gro_receive_skb`。
 - `/home/chen/code/linux-lab/src/linux-6.18/net/ipv4/af_inet.c:1879`：单包与 list 两种 IPv4 入口注册。
 - `/home/chen/code/linux-lab/src/linux-6.18/net/ipv4/icmp.c:1019`：Echo 处理；`/home/chen/code/linux-lab/src/linux-6.18/net/ipv4/icmp.c:369`：构造回复并提交 IP 输出。

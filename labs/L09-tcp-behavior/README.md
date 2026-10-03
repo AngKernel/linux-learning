@@ -32,7 +32,7 @@ tc -s qdisc show dev "$LAB_IF"
 | 条件 | root qdisc | 用途 |
 |---|---|---|
 | `clear` | `fq`，handle `109:` | 不注入网络故障的基线 |
-| `netem` | `netem delay 20ms loss 0.5% limit 10000` | 单方向延迟与随机丢包，结束恢复 `fq` |
+| `netem` | `netem delay 20ms loss 0.5% limit 10000`，handle `209:` | 单方向延迟与随机丢包，结束恢复 `fq` |
 
 两条件的 qdisc 也不同，不能把 clear→netem 的全部差异都归因于丢包率。算法间比较应在**相同条件**进行。BBR 在 root netem 下走 TCP 内部 pacing（定速发送）兜底；这里没有声称 netem 内同时存在 fq。若要单独区分延迟与丢包，可按同一恢复规则增加 delay-only 与 loss-only 轮次，统一记录条件。
 
@@ -59,7 +59,7 @@ tc -s qdisc show dev "$LAB_IF"
 
    ```bash
    sysctl -w net.ipv4.tcp_congestion_control=bbr
-   tc qdisc replace dev "$LAB_IF" root handle 109: netem delay 20ms loss 0.5% limit 10000
+   tc qdisc replace dev "$LAB_IF" root handle 209: netem delay 20ms loss 0.5% limit 10000
    ss -tin '( sport = :5229 or dport = :5229 )'
    tc -s qdisc show dev "$LAB_IF"
    ```
