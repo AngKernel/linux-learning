@@ -64,7 +64,7 @@ classDiagram
 
 | 对象 | 创建/注册方 | 回收条件与负责者 | 源码锚点 |
 |---|---|---|---|
-| file | socket 创建路径接入 VFS 的文件分配 | 最后文件引用释放后由 VFS 释放并调用 socket 文件释放逻辑；关一个 fd 未必最后引用 | net/socket.c:476 |
+| file | socket 创建路径接入 VFS 的文件分配 | 最后文件引用释放后由 VFS 释放并调用 socket 文件释放逻辑；关一个 fd 未必最后引用 | net/socket.c:476；net/socket.c:1453；fs/file_table.c:442 |
 | socket | socket 核心分配，底层接入 socket inode（索引节点） | socket 释放路径调用协议 release；内核 socket 与绑定 file 的 socket 回收入口不同 | net/socket.c:688 |
 | sock | 协议创建时分配；TCP 的对象包含扩展状态 | 协议释放队列、哈希、定时器等资源，引用和相关内存记账条件满足后回收；不要简化成 close 立即 free | net/ipv4/af_inet.c:328；include/net/sock.h:1969；net/core/sock.c:2404 |
 | sk_buff | 驱动或协议等当前生产者分配/构造 | 当前持有者转交、消费或释放；skb 描述符引用与共享数据的引用分别管理，clone（克隆）不等于完整复制 | include/linux/skbuff.h:1097；include/linux/skbuff.h:593；net/core/skbuff.c:1164 |
