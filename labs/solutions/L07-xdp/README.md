@@ -21,12 +21,14 @@ clang -O2 -g -Wall -Wextra -Werror -target bpf \
 
 <details><summary>四道思考题答案</summary>
 
-1. 没有 ARP 或控制连接，待测数据流可能根本没建立，零接收会产生误导。
+1. 除 ARP/TCP control 外，iperf3 还要交换 UDP 建流消息。全 DROP 必须在 UDP 已稳定发送后加入；否则低 CPU/零接收可能只是没有负载。
 2. key 0 包含该接口的其他 IP、ARP 等包；仅 key 1 是匹配条件的执行次数。
 3. 用发包端统计、VM1 XDP map 命中以及必要时对端链路抓包互相核对。
 4. native 在驱动路径，generic 在 skb 路径；两者基线不同，不能合并为同一个结果。
 
 </details>
+
+DROP 轮次先无丢弃地建立 45 秒 UDP 流，稳定至少 5 秒后再启用 XDP/INPUT DROP；排除切换后的 2 秒，在随后的相同 15 秒窗口统计差值，然后移除 DROP 使流正常结束。不可把包含放行时段的最终平均值当作稳定丢包性能。
 
 空白记录表：
 
