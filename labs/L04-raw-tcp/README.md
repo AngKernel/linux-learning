@@ -26,7 +26,7 @@ VM1 先在 `ss -tan` 中检查端口，再启动 `sudo tcpdump -ni "$LAB_IF" -s0
    sudo socat -u OPEN:/tmp/l04-syn.ip,rdonly IP4-SENDTO:192.0.2.12:255
    ```
 
-   本实验每个文件仅含一个长度小于 MTU 的完整 IPv4 数据报；以上命令不负责 TCP 构包、checksum、状态和重传。socat 的 `IP4-SENDTO` 使用 raw IP socket，protocol 255 允许数据中包含 IP 头；依据实际访问的 [socat 手册](https://man7.org/linux/man-pages/man1/socat.1.html)。记录对端 SYN-ACK 后是否紧跟本机 RST。
+   本实验每个文件仅含一个长度小于 MTU 的完整 IPv4 数据报；以上命令不负责 TCP 构包、TCP checksum、状态和重传。Linux 的 IP_HDRINCL 路径会重填 IPv4 总长度和 header checksum，见 `net/ipv4/raw.c:399`；仍手算 IPv4 checksum 用于练习核对，但不能用此发送方法演示“坏 IPv4 checksum 原样上网线”。socat 的 `IP4-SENDTO` 使用 raw IP socket，protocol 255 允许数据中包含 IP 头；依据实际访问的 [socat 手册](https://man7.org/linux/man-pages/man1/socat.1.html)。记录对端 SYN-ACK 后是否紧跟本机 RST。
 2. 在 VM1 增加仅覆盖本次四元组的规则：
 
    ```bash

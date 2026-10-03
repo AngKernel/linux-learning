@@ -22,7 +22,7 @@
 
 表只展示服务端先关闭的一种时序。响应分段、重复 ACK、FIN 合并均会改变包数。若服务先发 FIN，你的纸面状态依次经历 CLOSE_WAIT、LAST_ACK；如果自己先发 FIN，则需另外画主动关闭路径。FIN 的确认依赖前面所有数据连续收到。
 
-IPv4 checksum：将 IP 头 checksum 清零，对 20 字节按网络字节序分成 16 位字求一补码和、回卷进位、取反。TCP checksum：清零字段后，对 IPv4 pseudo-header（src/dst、0、protocol=6、TCP 长度）、TCP header 与 payload 做同样计算。奇数末尾补零参与计算，不把补字节实际发送。IPv4 total length=20+20+payload；无 options 时 TCP data offset=5；window 32768 是练习值，不是实现了实际接收窗口管理。
+IPv4 checksum：将 IP 头 checksum 清零，对 20 字节按网络字节序分成 16 位字求一补码和、回卷进位、取反。TCP checksum：清零字段后，对 IPv4 pseudo-header（src/dst、0、protocol=6、TCP 长度）、TCP header 与 payload 做同样计算。奇数末尾补零参与计算，不把补字节实际发送。IPPROTO_RAW 创建时启用 HDRINCL（`net/ipv4/af_inet.c:346`），内核在 `net/ipv4/raw.c:399` 重填 IPv4 total length/checksum，不替你计算 TCP checksum。IPv4 total length=20+20+payload；无 options 时 TCP data offset=5；window 32768 是练习值，不是实现了实际接收窗口管理。
 
 kernel 仍按正常 TCP 处理输入：`net/ipv4/ip_input.c:193` raw 投递之后会继续协议分发；`net/ipv4/tcp_ipv4.c:2402` 在未找到 socket 时可发 RST。iptables 规则抑制该四元组的出站 RST，只是实验隔离措施。
 
