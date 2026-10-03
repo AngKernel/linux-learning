@@ -1,0 +1,198 @@
+#!/usr/bin/env bpftrace
+/* 观察：v6.18 各接收阶段的调用次数、单次函数包围时间（微秒）。
+ * 运行：sudo /work/traces/run.sh rx-path 15，另一个终端向 guest 打 TCP 流量。
+ * 预期：@calls[tcp_v4_rcv]: N；@us[tcp_v4_rcv] 的 log2 直方图。
+ * 这不是每包端到端时间：GRO/批处理破坏一包一次对应，函数时间含子调用和中断。
+ * cpu + tid + 函数 + 深度区分同一 CPU 的递归；这里只适用于这些不睡眠的阶段。
+ * 所有探测点的定义、非 inline 证据见 SOURCES.md；真正能否挂载须在 guest 检查。
+ */
+BEGIN { printf("READY rx-path\n"); }
+interval:s:1 { @seconds = @seconds + 1; if (@seconds >= $1) { exit(); } }
+kprobe:vring_interrupt
+{
+  @calls["vring_interrupt"] = count();
+  @depth[cpu, tid, "vring_interrupt"] = @depth[cpu, tid, "vring_interrupt"] + 1;
+  @start[cpu, tid, "vring_interrupt", @depth[cpu, tid, "vring_interrupt"]] = nsecs;
+}
+kretprobe:vring_interrupt
+/@depth[cpu, tid, "vring_interrupt"] > 0/
+{
+  $d = @depth[cpu, tid, "vring_interrupt"];
+  if (@start[cpu, tid, "vring_interrupt", $d]) {
+    @us["vring_interrupt"] = hist((nsecs - @start[cpu, tid, "vring_interrupt", $d]) / 1000);
+    delete(@start[cpu, tid, "vring_interrupt", $d]);
+  }
+  @depth[cpu, tid, "vring_interrupt"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "vring_interrupt"]); }
+}
+kprobe:net_rx_action
+{
+  @calls["net_rx_action"] = count();
+  @depth[cpu, tid, "net_rx_action"] = @depth[cpu, tid, "net_rx_action"] + 1;
+  @start[cpu, tid, "net_rx_action", @depth[cpu, tid, "net_rx_action"]] = nsecs;
+}
+kretprobe:net_rx_action
+/@depth[cpu, tid, "net_rx_action"] > 0/
+{
+  $d = @depth[cpu, tid, "net_rx_action"];
+  if (@start[cpu, tid, "net_rx_action", $d]) {
+    @us["net_rx_action"] = hist((nsecs - @start[cpu, tid, "net_rx_action", $d]) / 1000);
+    delete(@start[cpu, tid, "net_rx_action", $d]);
+  }
+  @depth[cpu, tid, "net_rx_action"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "net_rx_action"]); }
+}
+kprobe:virtnet_poll
+{
+  @calls["virtnet_poll"] = count();
+  @depth[cpu, tid, "virtnet_poll"] = @depth[cpu, tid, "virtnet_poll"] + 1;
+  @start[cpu, tid, "virtnet_poll", @depth[cpu, tid, "virtnet_poll"]] = nsecs;
+}
+kretprobe:virtnet_poll
+/@depth[cpu, tid, "virtnet_poll"] > 0/
+{
+  $d = @depth[cpu, tid, "virtnet_poll"];
+  if (@start[cpu, tid, "virtnet_poll", $d]) {
+    @us["virtnet_poll"] = hist((nsecs - @start[cpu, tid, "virtnet_poll", $d]) / 1000);
+    delete(@start[cpu, tid, "virtnet_poll", $d]);
+  }
+  @depth[cpu, tid, "virtnet_poll"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "virtnet_poll"]); }
+}
+kprobe:gro_receive_skb
+{
+  @calls["gro_receive_skb"] = count();
+  @depth[cpu, tid, "gro_receive_skb"] = @depth[cpu, tid, "gro_receive_skb"] + 1;
+  @start[cpu, tid, "gro_receive_skb", @depth[cpu, tid, "gro_receive_skb"]] = nsecs;
+}
+kretprobe:gro_receive_skb
+/@depth[cpu, tid, "gro_receive_skb"] > 0/
+{
+  $d = @depth[cpu, tid, "gro_receive_skb"];
+  if (@start[cpu, tid, "gro_receive_skb", $d]) {
+    @us["gro_receive_skb"] = hist((nsecs - @start[cpu, tid, "gro_receive_skb", $d]) / 1000);
+    delete(@start[cpu, tid, "gro_receive_skb", $d]);
+  }
+  @depth[cpu, tid, "gro_receive_skb"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "gro_receive_skb"]); }
+}
+kprobe:__netif_receive_skb_core
+{
+  @calls["__netif_receive_skb_core"] = count();
+  @depth[cpu, tid, "__netif_receive_skb_core"] = @depth[cpu, tid, "__netif_receive_skb_core"] + 1;
+  @start[cpu, tid, "__netif_receive_skb_core", @depth[cpu, tid, "__netif_receive_skb_core"]] = nsecs;
+}
+kretprobe:__netif_receive_skb_core
+/@depth[cpu, tid, "__netif_receive_skb_core"] > 0/
+{
+  $d = @depth[cpu, tid, "__netif_receive_skb_core"];
+  if (@start[cpu, tid, "__netif_receive_skb_core", $d]) {
+    @us["__netif_receive_skb_core"] = hist((nsecs - @start[cpu, tid, "__netif_receive_skb_core", $d]) / 1000);
+    delete(@start[cpu, tid, "__netif_receive_skb_core", $d]);
+  }
+  @depth[cpu, tid, "__netif_receive_skb_core"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "__netif_receive_skb_core"]); }
+}
+kprobe:ip_rcv
+{
+  @calls["ip_rcv"] = count();
+  @depth[cpu, tid, "ip_rcv"] = @depth[cpu, tid, "ip_rcv"] + 1;
+  @start[cpu, tid, "ip_rcv", @depth[cpu, tid, "ip_rcv"]] = nsecs;
+}
+kretprobe:ip_rcv
+/@depth[cpu, tid, "ip_rcv"] > 0/
+{
+  $d = @depth[cpu, tid, "ip_rcv"];
+  if (@start[cpu, tid, "ip_rcv", $d]) {
+    @us["ip_rcv"] = hist((nsecs - @start[cpu, tid, "ip_rcv", $d]) / 1000);
+    delete(@start[cpu, tid, "ip_rcv", $d]);
+  }
+  @depth[cpu, tid, "ip_rcv"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "ip_rcv"]); }
+}
+kprobe:ip_list_rcv
+{
+  @calls["ip_list_rcv"] = count();
+  @depth[cpu, tid, "ip_list_rcv"] = @depth[cpu, tid, "ip_list_rcv"] + 1;
+  @start[cpu, tid, "ip_list_rcv", @depth[cpu, tid, "ip_list_rcv"]] = nsecs;
+}
+kretprobe:ip_list_rcv
+/@depth[cpu, tid, "ip_list_rcv"] > 0/
+{
+  $d = @depth[cpu, tid, "ip_list_rcv"];
+  if (@start[cpu, tid, "ip_list_rcv", $d]) {
+    @us["ip_list_rcv"] = hist((nsecs - @start[cpu, tid, "ip_list_rcv", $d]) / 1000);
+    delete(@start[cpu, tid, "ip_list_rcv", $d]);
+  }
+  @depth[cpu, tid, "ip_list_rcv"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "ip_list_rcv"]); }
+}
+kprobe:tcp_v4_rcv
+{
+  @calls["tcp_v4_rcv"] = count();
+  @depth[cpu, tid, "tcp_v4_rcv"] = @depth[cpu, tid, "tcp_v4_rcv"] + 1;
+  @start[cpu, tid, "tcp_v4_rcv", @depth[cpu, tid, "tcp_v4_rcv"]] = nsecs;
+}
+kretprobe:tcp_v4_rcv
+/@depth[cpu, tid, "tcp_v4_rcv"] > 0/
+{
+  $d = @depth[cpu, tid, "tcp_v4_rcv"];
+  if (@start[cpu, tid, "tcp_v4_rcv", $d]) {
+    @us["tcp_v4_rcv"] = hist((nsecs - @start[cpu, tid, "tcp_v4_rcv", $d]) / 1000);
+    delete(@start[cpu, tid, "tcp_v4_rcv", $d]);
+  }
+  @depth[cpu, tid, "tcp_v4_rcv"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "tcp_v4_rcv"]); }
+}
+kprobe:tcp_rcv_established
+{
+  @calls["tcp_rcv_established"] = count();
+  @depth[cpu, tid, "tcp_rcv_established"] = @depth[cpu, tid, "tcp_rcv_established"] + 1;
+  @start[cpu, tid, "tcp_rcv_established", @depth[cpu, tid, "tcp_rcv_established"]] = nsecs;
+}
+kretprobe:tcp_rcv_established
+/@depth[cpu, tid, "tcp_rcv_established"] > 0/
+{
+  $d = @depth[cpu, tid, "tcp_rcv_established"];
+  if (@start[cpu, tid, "tcp_rcv_established", $d]) {
+    @us["tcp_rcv_established"] = hist((nsecs - @start[cpu, tid, "tcp_rcv_established", $d]) / 1000);
+    delete(@start[cpu, tid, "tcp_rcv_established", $d]);
+  }
+  @depth[cpu, tid, "tcp_rcv_established"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "tcp_rcv_established"]); }
+}
+kprobe:sock_def_readable
+{
+  @calls["sock_def_readable"] = count();
+  @depth[cpu, tid, "sock_def_readable"] = @depth[cpu, tid, "sock_def_readable"] + 1;
+  @start[cpu, tid, "sock_def_readable", @depth[cpu, tid, "sock_def_readable"]] = nsecs;
+}
+kretprobe:sock_def_readable
+/@depth[cpu, tid, "sock_def_readable"] > 0/
+{
+  $d = @depth[cpu, tid, "sock_def_readable"];
+  if (@start[cpu, tid, "sock_def_readable", $d]) {
+    @us["sock_def_readable"] = hist((nsecs - @start[cpu, tid, "sock_def_readable", $d]) / 1000);
+    delete(@start[cpu, tid, "sock_def_readable", $d]);
+  }
+  @depth[cpu, tid, "sock_def_readable"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "sock_def_readable"]); }
+}
+kprobe:try_to_wake_up
+{
+  @calls["try_to_wake_up"] = count();
+  @depth[cpu, tid, "try_to_wake_up"] = @depth[cpu, tid, "try_to_wake_up"] + 1;
+  @start[cpu, tid, "try_to_wake_up", @depth[cpu, tid, "try_to_wake_up"]] = nsecs;
+}
+kretprobe:try_to_wake_up
+/@depth[cpu, tid, "try_to_wake_up"] > 0/
+{
+  $d = @depth[cpu, tid, "try_to_wake_up"];
+  if (@start[cpu, tid, "try_to_wake_up", $d]) {
+    @us["try_to_wake_up"] = hist((nsecs - @start[cpu, tid, "try_to_wake_up", $d]) / 1000);
+    delete(@start[cpu, tid, "try_to_wake_up", $d]);
+  }
+  @depth[cpu, tid, "try_to_wake_up"] = $d - 1;
+  if ($d == 1) { delete(@depth[cpu, tid, "try_to_wake_up"]); }
+}
+END { clear(@start); clear(@depth); clear(@seconds); }

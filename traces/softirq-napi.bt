@@ -1,0 +1,25 @@
+#!/usr/bin/env bpftrace
+/* 观察：每 CPU/softirq vector 的调用数与耗时；每 NAPI 实例 work/budget 分布。
+ * 运行：sudo /work/traces/run.sh softirq-napi 20
+ * 预期：@softirq_calls[CPU, vec]；@poll_work[CPU, dev, napi指针]；@at_budget[...]。
+ * vec=2 为 NET_TX，vec=3 为 NET_RX。work 是驱动报告的工作量，TX poll 可为 0。
+ * 源码：include/trace/events/irq.h:103；include/trace/events/napi.h:14。
+ */
+BEGIN { printf("READY softirq-napi\n"); }
+tracepoint:irq:softirq_entry {
+  @softirq_calls[cpu, args.vec] = count();
+  @start[cpu, args.vec] = nsecs;
+}
+tracepoint:irq:softirq_exit /@start[cpu, args.vec]/ {
+  @softirq_us[cpu, args.vec] = hist((nsecs - @start[cpu, args.vec]) / 1000);
+  delete(@start[cpu, args.vec]);
+}
+tracepoint:napi:napi_poll {
+  @poll_work[cpu, str(args.dev_name), args.napi] = hist(args.work);
+  @poll_budget[cpu, str(args.dev_name), args.napi] = hist(args.budget);
+  if (args.budget > 0 && args.work >= args.budget) {
+    @at_budget[cpu, str(args.dev_name), args.napi] = count();
+  }
+}
+interval:s:1 { @seconds = @seconds + 1; if (@seconds >= $1) { exit(); } }
+END { clear(@start); clear(@seconds); }

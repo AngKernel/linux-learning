@@ -1,0 +1,11 @@
+#!/usr/bin/env bpftrace
+/* 观察：kfree_skb 的数字 drop reason 和释放位置；不把 consume_skb 当成丢包。
+ * 运行：sudo /work/traces/run.sh drop-reason 20
+ * 预期：@drops[数字, tcp_v4_rcv+偏移]: N。没有丢包时没有该 map 输出，属于正常。
+ * reason 对照 guest /sys/kernel/tracing/events/skb/kfree_skb/format 的 print fmt。
+ * 源码：include/trace/events/skb.h:24；include/net/dropreason-core.h:139。
+ */
+BEGIN { printf("READY drop-reason\n"); }
+tracepoint:skb:kfree_skb { @drops[args.reason, ksym(args.location)] = count(); }
+interval:s:1 { @seconds = @seconds + 1; if (@seconds >= $1) { exit(); } }
+END { clear(@seconds); }
