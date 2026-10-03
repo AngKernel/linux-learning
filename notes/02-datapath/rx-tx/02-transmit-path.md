@@ -273,7 +273,7 @@ sudo perf script -i /tmp/ll-tx-events.data
 事件定义已核查：`net_dev_start_xmit` 在 `include/trace/events/net.h:14`，`net_dev_xmit` 在 `include/trace/events/net.h:72`，`net_dev_queue` 在 `include/trace/events/net.h:144`。`net_dev_xmit` 是驱动发送函数**返回**事件，不是硬件/后端完成事件。预期示意：
 
 ```text
-net_dev_start_xmit: dev=ens3 ... len=32768 gso_size=1448 gso_segs=... 
+net_dev_start_xmit: dev=ens3 ... len=32768 gso_size=1448 gso_segs=...
 net_dev_xmit: dev=ens3 ... rc=0
 napi_poll: ... for device ens3 work 0 budget 64
 ```
